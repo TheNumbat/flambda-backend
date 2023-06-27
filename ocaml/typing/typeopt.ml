@@ -282,7 +282,12 @@ let rec value_kind env ~loc ~visited ~depth ~num_nodes_visited ty
     num_nodes_visited, (Pboxedintval Pint64)
   | Tconstr(p, _, _) when Path.same p Predef.path_nativeint ->
     num_nodes_visited, (Pboxedintval Pnativeint)
-  | Tconstr(p, _, _) when Path.same p Predef.path_vec128 ->
+  | Tconstr(p, _, _) when Path.same p Predef.path_int8x16
+  || Path.same p Predef.path_int16x8
+  || Path.same p Predef.path_int32x4
+  || Path.same p Predef.path_int64x2
+  || Path.same p Predef.path_float32x4
+  || Path.same p Predef.path_float64x2 ->
     num_nodes_visited, (Pboxedvectorval Pvec128)
   | Tconstr(p, _, _)
     when (Path.same p Predef.path_array

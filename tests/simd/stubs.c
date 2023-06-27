@@ -5,17 +5,17 @@
 #include <smmintrin.h>
 #include <emmintrin.h>
 
-int64_t vec128_low_int64(__m128i v) 
+int64_t int64x2_low_int64(__m128i v) 
 {
   return _mm_extract_epi64(v, 0);
 }
 
-int64_t vec128_high_int64(__m128i v) 
+int64_t int64x2_high_int64(__m128i v) 
 {
   return _mm_extract_epi64(v, 1);
 }
 
-__m128i vec128_of_int64s(int64_t low, int64_t high) 
+__m128i int64x2_of_int64s(int64_t low, int64_t high) 
 {
   return _mm_set_epi64x(high, low); 
 }
@@ -76,7 +76,7 @@ __m128i vectors_and_floats(
   __m128i z0 = _mm_add_epi64(y0, y1);
   __m128i z = _mm_add_epi64(z0, y2);
   double f = f0 + f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12;
-  return vec128_of_int64s((int64_t)f, vec128_low_int64(z) + vec128_high_int64(z));
+  return int64x2_of_int64s((int64_t)f, int64x2_low_int64(z) + int64x2_high_int64(z));
 }
 
 __m128i vectors_and_floats_and_ints(
@@ -99,5 +99,5 @@ __m128i vectors_and_floats_and_ints(
   __m128i z = _mm_add_epi64(z0, y2); 
   double f = f0 + f1 + f2 + f3 + f4 + f5;
   int64_t i = i0 + i1 + i2 + i3 + i4 + i5 + i6;
-  return vec128_of_int64s((int64_t)f + i, vec128_low_int64(z) + vec128_high_int64(z));
+  return int64x2_of_int64s((int64_t)f + i, int64x2_low_int64(z) + int64x2_high_int64(z));
 }
