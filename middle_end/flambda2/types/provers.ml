@@ -291,7 +291,7 @@ let[@inline] meet_naked_number (type a) (kind : a meet_naked_number_kind) env t
           (is :> Targetint_32_64.Set.t))
         ~is_empty:Targetint_32_64.Set.is_empty
     | _ -> wrong_kind ())
-  | Naked_vec128 vs -> (
+  | Naked_vec128 (_, vs) -> (
     match kind with
     | Vec128 ->
       head_to_proof vs
@@ -395,8 +395,8 @@ let prove_is_a_boxed_or_tagged_number env t :
     Proved (Boxed (alloc_mode, Naked_int64, contents_ty))
   | Value (Ok (Boxed_nativeint (contents_ty, alloc_mode))) ->
     Proved (Boxed (alloc_mode, Naked_nativeint, contents_ty))
-  | Value (Ok (Boxed_vec128 (contents_ty, alloc_mode))) ->
-    Proved (Boxed (alloc_mode, Naked_vec128, contents_ty))
+  | Value (Ok (Boxed_vec128 (vty, contents_ty, alloc_mode))) ->
+    Proved (Boxed (alloc_mode, Naked_vec128 vty, contents_ty))
   | Value (Bottom | Ok (Mutable_block _ | Closures _ | String _ | Array _)) ->
     Unknown
   | Naked_immediate _ | Naked_float _ | Naked_int32 _ | Naked_int64 _
@@ -532,7 +532,7 @@ let meet_is_flat_float_array env t : bool meet_shortcut =
     | Naked_number Naked_float -> Known_result true
     | Naked_number
         ( Naked_immediate | Naked_int32 | Naked_int64 | Naked_nativeint
-        | Naked_vec128 )
+        | Naked_vec128 _ )
     | Region | Rec_info ->
       Misc.fatal_errorf "Wrong element kind for array: %a" K.With_subkind.print
         element_kind)
@@ -560,7 +560,7 @@ let prove_is_immediates_array env t : unit proof_of_property =
     match K.With_subkind.subkind element_kind with
     | Tagged_immediate -> Proved ()
     | Anything | Boxed_float | Boxed_int32 | Boxed_int64 | Boxed_nativeint
-    | Boxed_vec128 | Variant _ | Float_block _ | Float_array | Immediate_array
+    | Boxed_vec128 _ | Variant _ | Float_block _ | Float_array | Immediate_array
     | Value_array | Generic_array ->
       Unknown)
   | Value
@@ -751,7 +751,7 @@ let meet_boxed_vec128_containing_simple =
   meet_boxed_number_containing_simple
     ~contents_of_boxed_number:(fun (ty_value : TG.head_of_kind_value) ->
       match ty_value with
-      | Boxed_vec128 (ty, _) -> Some ty
+      | Boxed_vec128 (_, ty, _) -> Some ty
       | Variant _ | Mutable_block _ | Boxed_float _ | Boxed_int32 _
       | Boxed_nativeint _ | Boxed_int64 _ | Closures _ | String _ | Array _ ->
         None)
@@ -857,7 +857,7 @@ let prove_alloc_mode_of_boxed_number env t :
   | Value (Ok (Boxed_int32 (_, alloc_mode)))
   | Value (Ok (Boxed_int64 (_, alloc_mode)))
   | Value (Ok (Boxed_nativeint (_, alloc_mode)))
-  | Value (Ok (Boxed_vec128 (_, alloc_mode))) ->
+  | Value (Ok (Boxed_vec128 (_, _, alloc_mode))) ->
     Proved alloc_mode
   | Value (Ok (Variant _ | Mutable_block _ | String _ | Array _ | Closures _))
   | Value (Unknown | Bottom) ->
@@ -885,7 +885,7 @@ let never_holds_locally_allocated_values env var : _ proof_of_property =
     | Value (Ok (Boxed_int32 (_, alloc_mode)))
     | Value (Ok (Boxed_int64 (_, alloc_mode)))
     | Value (Ok (Boxed_nativeint (_, alloc_mode)))
-    | Value (Ok (Boxed_vec128 (_, alloc_mode)))
+    | Value (Ok (Boxed_vec128 (_, _, alloc_mode)))
     | Value (Ok (Mutable_block { alloc_mode }))
     | Value (Ok (Closures { alloc_mode; _ }))
     | Value (Ok (Array { alloc_mode; _ })) -> (
@@ -941,7 +941,7 @@ let prove_physical_equality env t1 t2 =
         if incompatible_naked_numbers t1 t2 then Proved false else Unknown
       | Boxed_nativeint (t1, _), Boxed_nativeint (t2, _) ->
         if incompatible_naked_numbers t1 t2 then Proved false else Unknown
-      | Boxed_vec128 (t1, _), Boxed_vec128 (t2, _) ->
+      | Boxed_vec128 (_, t1, _), Boxed_vec128 (_, t2, _) ->
         if incompatible_naked_numbers t1 t2 then Proved false else Unknown
       | Closures _, Closures _ -> Unknown
       | String s1, String s2 ->
