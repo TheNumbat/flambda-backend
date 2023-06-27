@@ -90,7 +90,7 @@ let this_boxed_nativeint i alloc_mode =
   TG.box_nativeint (TG.this_naked_nativeint i) alloc_mode
 
 let this_boxed_vec128 vty i alloc_mode =
-  TG.box_vec128 (TG.this_naked_vec128 vty i) alloc_mode
+  TG.box_vec128 (TG.this_naked_vec128 vty i) vty alloc_mode
 
 let these_boxed_floats fs alloc_mode =
   TG.box_float (these_naked_floats fs) alloc_mode
@@ -117,7 +117,7 @@ let any_boxed_nativeint =
   TG.box_nativeint TG.any_naked_nativeint (Alloc_mode.For_types.unknown ())
 
 let any_boxed_vec128 vty =
-  TG.box_vec128 (TG.any_naked_vec128 vty) (Alloc_mode.For_types.unknown ())
+  TG.box_vec128 (TG.any_naked_vec128 vty) vty (Alloc_mode.For_types.unknown ())
 
 let any_block =
   TG.create_variant ~is_unique:false

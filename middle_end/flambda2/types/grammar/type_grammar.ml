@@ -2891,13 +2891,14 @@ let box_nativeint (t : t) alloc_mode : t =
   | Naked_vec128 _ | Rec_info _ | Region _ ->
     Misc.fatal_errorf "Type of wrong kind for [box_nativeint]: %a" print t
 
-let box_vec128 (t : t) alloc_mode : t =
+let box_vec128 (t : t) ty alloc_mode : t =
   match t with
   | Naked_vec128 (vty, _) ->
     Value (TD.create (Boxed_vec128 (vty, t, alloc_mode)))
   | Value _ | Naked_immediate _ | Naked_float _ | Naked_int32 _ | Naked_int64 _
   | Naked_nativeint _ | Rec_info _ | Region _ ->
-    Misc.fatal_errorf "Type of wrong kind for [box_vec128]: %a" print t
+    Misc.fatal_errorf "Type of wrong kind for [box_vec128[%s]]: %a"
+      (Primitive.vec128_name ty) print t
 
 let this_tagged_immediate imm : t =
   Value (TD.create_equals (Simple.const (RWC.tagged_immediate imm)))
@@ -2940,7 +2941,7 @@ let boxed_nativeint_alias_to ~naked_nativeint =
     (Naked_nativeint (TD.create_equals (Simple.var naked_nativeint)))
 
 let boxed_vec128_alias_to ty ~naked_vec128 =
-  box_vec128 (Naked_vec128 (ty, TD.create_equals (Simple.var naked_vec128)))
+  box_vec128 (Naked_vec128 (ty, TD.create_equals (Simple.var naked_vec128))) ty
 
 let this_immutable_string str =
   let size = Targetint_31_63.of_int (String.length str) in

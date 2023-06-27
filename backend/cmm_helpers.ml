@@ -152,7 +152,7 @@ let alloc_float_header mode dbg =
 let alloc_boxedvector_header vi mode dbg =
   let header, local_header =
     match vi with
-    | Primitive.Pvec128 -> boxedvec128_header, boxedvec128_local_header
+    | Primitive.Pvec128 _ -> boxedvec128_header, boxedvec128_local_header
   in
   match mode with
   | Lambda.Alloc_heap -> Cconst_natint (header, dbg)
@@ -719,7 +719,7 @@ let box_vector dbg vi m c =
   Cop (Calloc m, [alloc_boxedvector_header vi m dbg; c], dbg)
 
 let rec unbox_vector dbg vi =
-  let load = match vi with Primitive.Pvec128 -> Onetwentyeight in
+  let load = match vi with Primitive.Pvec128 _ -> Onetwentyeight in
   map_tail ~kind:Any (function
     | Cop (Calloc _, [Cconst_natint (hdr, _); c], _)
       when Nativeint.equal hdr float_header
@@ -727,8 +727,10 @@ let rec unbox_vector dbg vi =
       c
     | Cconst_symbol (s, _dbg) as cmm -> (
       match Cmmgen_state.structured_constant_of_sym s.sym_name with
-      | Some (Uconst_vec128 (v0, v1)) ->
-        assert (vi = Primitive.Pvec128);
+      | Some (Uconst_vec128 (ty, v0, v1)) ->
+        (match vi with
+        | Primitive.Pvec128 vty when ty = vty -> ()
+        | _ -> assert false);
         Cconst_vec128 (v0, v1, dbg) (* or keep _dbg? *)
       | _ -> Cop (Cload (load, Immutable), [cmm], dbg))
     | Cregion e as cmm -> (
@@ -1127,7 +1129,7 @@ module Extended_machtype = struct
     | Pbottom ->
       Misc.fatal_error "No unique Extended_machtype for layout [Pbottom]"
     | Punboxed_float -> typ_float
-    | Punboxed_vector Pvec128 -> typ_vec128
+    | Punboxed_vector (Pvec128 _) -> typ_vec128
     | Punboxed_int _ ->
       (* Only 64-bit architectures, so this is always [typ_int] *)
       typ_any_int

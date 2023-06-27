@@ -102,7 +102,10 @@ val prove_is_a_boxed_nativeint :
   Typing_env.t -> Type_grammar.t -> unit proof_of_property
 
 val prove_is_a_boxed_vec128 :
-  Typing_env.t -> Type_grammar.t -> unit proof_of_property
+  Primitive.vec128_type ->
+  Typing_env.t ->
+  Type_grammar.t ->
+  unit proof_of_property
 
 val prove_is_or_is_not_a_boxed_float :
   Typing_env.t -> Type_grammar.t -> bool proof_of_property
@@ -199,6 +202,7 @@ val meet_boxed_nativeint_containing_simple :
   Simple.t meet_shortcut
 
 val meet_boxed_vec128_containing_simple :
+  Primitive.vec128_type ->
   Typing_env.t ->
   min_name_mode:Name_mode.t ->
   Type_grammar.t ->

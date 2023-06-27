@@ -123,23 +123,60 @@ module Nativeint = struct
     }
 end
 
-module Vec128 = struct
+module type Vector_type = sig
+  val t : Primitive.vec128_type
+end
+
+module Vec128 (VecT : Vector_type) = struct
   let decider =
     { param_name = "unboxed_vec128";
-      kind = K.Naked_number_kind.Naked_vec128;
-      prove_is_a_boxed_number = T.prove_is_a_boxed_vec128
+      kind = K.Naked_number_kind.Naked_vec128 VecT.t;
+      prove_is_a_boxed_number = T.prove_is_a_boxed_vec128 VecT.t
     }
 
-  let unboxing_prim simple = P.(Unary (Unbox_number Naked_vec128, simple))
+  let unboxing_prim simple =
+    P.(Unary (Unbox_number (Naked_vec128 VecT.t), simple))
 
   let unboxer =
     { var_name = "unboxed_vec128";
       invalid_const =
-        Const.naked_vec128 Numeric_types.Vec128_by_bit_pattern.zero;
+        Const.naked_vec128 VecT.t Numeric_types.Vec128_by_bit_pattern.zero;
       unboxing_prim;
-      prove_simple = T.meet_boxed_vec128_containing_simple
+      prove_simple = T.meet_boxed_vec128_containing_simple VecT.t
     }
 end
+
+module Int8x16 = Vec128 (struct
+  let t = Primitive.Int8x16
+end)
+
+module Int16x8 = Vec128 (struct
+  let t = Primitive.Int16x8
+end)
+
+module Int32x4 = Vec128 (struct
+  let t = Primitive.Int32x4
+end)
+
+module Int64x2 = Vec128 (struct
+  let t = Primitive.Int64x2
+end)
+
+module Float32x4 = Vec128 (struct
+  let t = Primitive.Float32x4
+end)
+
+module Float64x2 = Vec128 (struct
+  let t = Primitive.Float64x2
+end)
+
+let vec_unboxer : Primitive.vec128_type -> unboxer = function
+  | Int8x16 -> Int8x16.unboxer
+  | Int16x8 -> Int16x8.unboxer
+  | Int32x4 -> Int32x4.unboxer
+  | Int64x2 -> Int64x2.unboxer
+  | Float32x4 -> Float32x4.unboxer
+  | Float64x2 -> Float64x2.unboxer
 
 module Field = struct
   let unboxing_prim bak ~block ~index =

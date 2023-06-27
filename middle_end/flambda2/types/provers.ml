@@ -455,10 +455,11 @@ let prove_is_a_boxed_nativeint env t : _ proof_of_property =
   | Naked_vec128 _ | Naked_nativeint _ | Rec_info _ | Region _ ->
     wrong_kind "Value" t
 
-let prove_is_a_boxed_vec128 env t : _ proof_of_property =
+let prove_is_a_boxed_vec128 ty env t : _ proof_of_property =
   match expand_head env t with
   | Value Unknown -> Unknown
-  | Value (Ok (Boxed_vec128 _)) -> Proved ()
+  | Value (Ok (Boxed_vec128 (vty, _, _))) when Primitive.equal_vec128 ty vty ->
+    Proved ()
   | Value _ -> Unknown
   | Naked_immediate _ | Naked_float _ | Naked_int32 _ | Naked_int64 _
   | Naked_vec128 _ | Naked_nativeint _ | Rec_info _ | Region _ ->
@@ -747,13 +748,15 @@ let meet_boxed_nativeint_containing_simple =
       | Boxed_vec128 _ | Boxed_int64 _ | Closures _ | String _ | Array _ ->
         None)
 
-let meet_boxed_vec128_containing_simple =
+let meet_boxed_vec128_containing_simple vty1 =
   meet_boxed_number_containing_simple
     ~contents_of_boxed_number:(fun (ty_value : TG.head_of_kind_value) ->
       match ty_value with
-      | Boxed_vec128 (_, ty, _) -> Some ty
+      | Boxed_vec128 (vty2, ty, _) when Primitive.equal_vec128 vty1 vty2 ->
+        Some ty
       | Variant _ | Mutable_block _ | Boxed_float _ | Boxed_int32 _
-      | Boxed_nativeint _ | Boxed_int64 _ | Closures _ | String _ | Array _ ->
+      | Boxed_vec128 _ | Boxed_nativeint _ | Boxed_int64 _ | Closures _
+      | String _ | Array _ ->
         None)
 
 let meet_block_field_simple env ~min_name_mode ~field_kind t field_index :
@@ -914,7 +917,7 @@ let prove_physical_equality env t1 t2 =
     | Naked_nativeint (Ok s1), Naked_nativeint (Ok s2) ->
       let module IS = Targetint_32_64.Set in
       IS.is_empty (IS.inter (s1 :> IS.t) (s2 :> IS.t))
-    | Naked_vec128 (Ok s1), Naked_vec128 (Ok s2) ->
+    | Naked_vec128 (_, Ok s1), Naked_vec128 (_, Ok s2) ->
       let module IS = Numeric_types.Vec128_by_bit_pattern.Set in
       IS.is_empty (IS.inter (s1 :> IS.t) (s2 :> IS.t))
     | _, _ -> false

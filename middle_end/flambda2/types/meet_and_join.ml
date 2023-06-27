@@ -310,7 +310,6 @@ and meet_expanded_head0 env (descr1 : ET.descr) (descr2 : ET.descr) :
     in
     ET.create_naked_nativeint head, env_extension
   | Naked_vec128 (vty1, head1), Naked_vec128 (vty2, head2)
-  (* CR mslater: (SIMD) does this make us not share values between types? *)
     when Primitive.equal_vec128 vty1 vty2 ->
     let<+ head, env_extension =
       meet_head_of_kind_naked_vec128 env head1 head2
@@ -372,7 +371,6 @@ and meet_head_of_kind_value env (head1 : TG.head_of_kind_value)
     let<+ alloc_mode = meet_alloc_mode alloc_mode1 alloc_mode2 in
     TG.Head_of_kind_value.create_boxed_nativeint n alloc_mode, env_extension
   | Boxed_vec128 (vty1, n1, alloc_mode1), Boxed_vec128 (vty2, n2, alloc_mode2)
-  (* CR mslater: (SIMD) does this make us not share values between types? *)
     when Primitive.equal_vec128 vty1 vty2 ->
     let<* n, env_extension = meet env n1 n2 in
     let<+ alloc_mode = meet_alloc_mode alloc_mode1 alloc_mode2 in
@@ -1148,7 +1146,6 @@ and join_expanded_head env kind (expanded1 : ET.t) (expanded2 : ET.t) : ET.t =
         let>+ head = join_head_of_kind_naked_nativeint env head1 head2 in
         ET.create_naked_nativeint head
       | Naked_vec128 (vty1, head1), Naked_vec128 (vty2, head2)
-      (* CR mslater: (SIMD) does this make us not share values between types? *)
         when Primitive.equal_vec128 vty1 vty2 ->
         let>+ head = join_head_of_kind_naked_vec128 env head1 head2 in
         ET.create_naked_vec128 vty1 head
@@ -1202,7 +1199,6 @@ and join_head_of_kind_value env (head1 : TG.head_of_kind_value)
     let alloc_mode = join_alloc_mode alloc_mode1 alloc_mode2 in
     TG.Head_of_kind_value.create_boxed_nativeint n alloc_mode
   | Boxed_vec128 (vty1, n1, alloc_mode1), Boxed_vec128 (vty2, n2, alloc_mode2)
-  (* CR mslater: (SIMD) does this make us not share values between types? *)
     when Primitive.equal_vec128 vty1 vty2 ->
     let>+ n = join env n1 n2 in
     let alloc_mode = join_alloc_mode alloc_mode1 alloc_mode2 in

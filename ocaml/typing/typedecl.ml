@@ -1871,6 +1871,10 @@ let native_repr_of_type env kind ty =
     Some (Unboxed_vector (Pvec128 Int32x4))
   | Unboxed, Tconstr (path, _, _) when Path.same path Predef.path_int64x2 -> 
     Some (Unboxed_vector (Pvec128 Int64x2))
+  | Unboxed, Tconstr (path, _, _) when Path.same path Predef.path_float32x4 -> 
+    Some (Unboxed_vector (Pvec128 Float32x4))
+  | Unboxed, Tconstr (path, _, _) when Path.same path Predef.path_float64x2 -> 
+    Some (Unboxed_vector (Pvec128 Float64x2))
   | _ ->
     None
 
