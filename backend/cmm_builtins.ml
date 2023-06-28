@@ -191,7 +191,7 @@ let bigstring_atomic_add size (arg1, arg2, arg3) dbg =
 let bigstring_atomic_sub size (arg1, arg2, arg3) dbg =
   bigstring_atomic_add size (arg1, arg2, neg_int arg3 dbg) dbg
 
-let transl_vec128_builtin name args dbg typ_res =
+let transl_vec128_cast name args dbg typ_res =
   match name with
   | "caml_int64x2_of_int32x4" ->
     let op = Cvectorcast (Bits128 { to_ = Int64x2; from = Int32x4 }) in
@@ -615,7 +615,7 @@ let transl_builtin name args dbg typ_res =
     bigstring_cas Sixtyfour (four_args name args) dbg
   | "caml_bigstring_compare_and_swap_int32_unboxed" ->
     bigstring_cas Thirtytwo (four_args name args) dbg
-  | _ -> transl_vec128_builtin name args dbg typ_res
+  | _ -> transl_vec128_cast name args dbg typ_res
 
 let transl_effects (e : Primitive.effects) : Cmm.effects =
   match e with

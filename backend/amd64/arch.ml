@@ -31,6 +31,12 @@ let prefetchwt1_support = ref false
 (* Emit elf notes with trap handling information. *)
 let trap_notes = ref true
 
+(* Basline x86_64 requires SSE and SSE2. The others may be disabled. *)
+let sse3_support = ref true 
+let ssse3_support = ref true 
+let sse41_support = ref true 
+let sse42_support = ref true 
+
 (* Machine-specific command-line options *)
 
 let command_line_options =
@@ -42,10 +48,6 @@ let command_line_options =
       " Use POPCNT instruction (not available prior to Nehalem) (default)";
     "-fno-popcnt", Arg.Clear popcnt_support,
       " Do not use POPCNT instruction";
-    "-fcrc32", Arg.Set crc32_support,
-      " Use CRC32 instructions (requires SSE4.2 support) (default)";
-    "-fno-crc32", Arg.Clear crc32_support,
-      " Do not emit CRC32 instructions";
     "-fprefetchw", Arg.Set prefetchw_support,
       " Use PREFETCHW instructions (not available on Haswell and earlier) \
         (default)";
@@ -59,6 +61,18 @@ let command_line_options =
       " Emit .note.ocaml_eh section with trap handling information (default)";
     "-fno-trap-notes", Arg.Clear trap_notes,
       " Do not emit .note.ocaml_eh section with trap handling information";
+    "-fsse3", Arg.Set sse3_support,
+      " Enable SSE3 intrinsics (default)";
+    "-fno-sse3", Arg.Clear sse3_support,
+      " Disable SSE3 intrinsics";
+    "-fsse41", Arg.Set sse3_support,
+      " Enable SSE4.1 intrinsics (default)";
+    "-fno-sse41", Arg.Clear sse3_support,
+      " Disable SSE4.1 intrinsics";
+    "-fsse42", Arg.Set sse3_support,
+      " Enable SSE4.2 intrinsics (default)";
+    "-fno-sse42", Arg.Clear sse3_support,
+      " Disable SSE4.2 intrinsics";
   ]
 
 (* Specific operations for the AMD64 processor *)

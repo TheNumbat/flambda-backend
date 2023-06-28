@@ -323,9 +323,6 @@ method! select_operation op args dbg =
       begin match func, ret with
       | "caml_rdtsc_unboxed", [|Int|] -> Ispecific Irdtsc, args
       | "caml_rdpmc_unboxed", [|Int|] -> Ispecific Irdpmc, args
-      | ("caml_int64_crc_unboxed", [|Int|]
-        | "caml_int_crc_untagged", [|Int|]) when !Arch.crc32_support ->
-          Ispecific Icrc32q, args
       | "caml_float_iround_half_to_even_unboxed", [|Int|] ->
          Ispecific Ifloat_iround, args
       | "caml_float_round_half_to_even_unboxed", [|Float|] ->
@@ -351,7 +348,9 @@ method! select_operation op args dbg =
       | "caml_memory_fence", ([|Val|] | [| |]) ->
          Ispecific Imfence, args
       | _ ->
-        super#select_operation op args dbg
+        (match Simd.select_operation func with 
+         | Some instr -> Ispecific instr, args
+         | None -> super#select_operation op args dbg)
       end
   (* Recognize store instructions *)
   | Cstore ((Word_int|Word_val as chunk), _init) ->
