@@ -227,6 +227,8 @@ let operation d = function
   | Cintoffloat -> "intoffloat"
   | Cvalueofint -> "valueofint"
   | Cintofvalue -> "intofvalue"
+  | Cvectorcast (Bits128 {from; to_}) -> 
+    Printf.sprintf "vec128[%s->%s]" (Primitive.vec128_name from) (Primitive.vec128_name to_)
   | Ccmpf c -> Printf.sprintf "%sf" (float_comparison c)
   | Craise k -> Lambda.raise_kind k ^ location d
   | Ccheckbound -> "checkbound" ^ location d

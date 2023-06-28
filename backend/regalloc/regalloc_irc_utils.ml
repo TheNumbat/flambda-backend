@@ -106,6 +106,7 @@ let is_move_basic : Cfg.basic -> bool =
   | Op op -> (
     match op with
     | Move -> true
+    | Vectorcast _ -> true
     | Spill -> false
     | Reload -> false
     | Const_int _ -> false

@@ -75,6 +75,7 @@ type operation =
   | Icsel of test
   | Ifloatofint | Iintoffloat
   | Ivalueofint | Iintofvalue
+  | Ivectorcast of Cmm.vector_cast
   | Iopaque
   | Ispecific of Arch.specific_operation
   | Ipoll of { return_label: Cmm.label option }
@@ -183,7 +184,7 @@ let rec instr_iter f i =
             | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
             | Icompf _
             | Icsel _
-            | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue
+            | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _
             | Ispecific _ | Iname_for_debugger _ | Iprobe _ | Iprobe_is_enabled _
             | Iopaque
             | Ibeginregion | Iendregion | Ipoll _) ->
@@ -206,7 +207,7 @@ let operation_is_pure = function
   | Imove | Ispill | Ireload | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
   | Icompf _
   | Icsel _
-  | Ifloatofint | Iintoffloat 
+  | Ifloatofint | Iintoffloat | Ivectorcast _
   | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
   | Iload (_, _, _) | Iname_for_debugger _
     -> true
@@ -226,7 +227,7 @@ let operation_can_raise op =
   | Imove | Ispill | Ireload | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
   | Icompf _
   | Icsel _
-  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue
+  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _
   | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
   | Istackoffset _ | Istore _  | Iload (_, _, _) | Iname_for_debugger _
   | Itailcall_imm _ | Itailcall_ind

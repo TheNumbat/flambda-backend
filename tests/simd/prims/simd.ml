@@ -53,3 +53,209 @@ let () =
   let fl, fh = float64x2_low_int64 f, float64x2_high_int64 f in
   eq fl fh 11L 12L
 ;;
+
+(* Conversions *)
+
+external int64x2_of_int32x4 : int32x4 -> int64x2 = "" "caml_int64x2_of_int32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int64x2_of_int16x8 : int16x8 -> int64x2 = "" "caml_int64x2_of_int16x8" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int64x2_of_int8x16 : int8x16 -> int64x2 = "" "caml_int64x2_of_int8x16" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int64x2_of_float32x4 : float32x4 -> int64x2 = "" "caml_int64x2_of_float32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int64x2_of_float64x2 : float64x2 -> int64x2 = "" "caml_int64x2_of_float64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int32x4_of_int64s   1L 2L in
+  let _1 = int16x8_of_int64s   3L 4L in
+  let _2 = int8x16_of_int64s   5L 6L in
+  let _3 = float32x4_of_int64s 7L 8L in
+  let _4 = float64x2_of_int64s 9L 10L in
+  let _0 = int64x2_of_int32x4   (Sys.opaque_identity _0) in
+  let _1 = int64x2_of_int16x8   (Sys.opaque_identity _1) in
+  let _2 = int64x2_of_int8x16   (Sys.opaque_identity _2) in
+  let _3 = int64x2_of_float32x4 (Sys.opaque_identity _3) in
+  let _4 = int64x2_of_float64x2 (Sys.opaque_identity _4) in
+  let a, b = int64x2_low_int64 _0, int64x2_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = int64x2_low_int64 _1, int64x2_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = int64x2_low_int64 _2, int64x2_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = int64x2_low_int64 _3, int64x2_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = int64x2_low_int64 _4, int64x2_high_int64 _4 in
+  eq a b 9L 10L
+;;
+
+external int32x4_of_int64x2 : int64x2 -> int32x4 = "" "caml_int32x4_of_int64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int32x4_of_int16x8 : int16x8 -> int32x4 = "" "caml_int32x4_of_int16x8" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int32x4_of_int8x16 : int8x16 -> int32x4 = "" "caml_int32x4_of_int8x16" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int32x4_of_float32x4 : float32x4 -> int32x4 = "" "caml_int32x4_of_float32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int32x4_of_float64x2 : float64x2 -> int32x4 = "" "caml_int32x4_of_float64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int64x2_of_int64s   1L 2L in
+  let _1 = int16x8_of_int64s   3L 4L in
+  let _2 = int8x16_of_int64s   5L 6L in
+  let _3 = float32x4_of_int64s 7L 8L in
+  let _4 = float64x2_of_int64s 9L 10L in
+  let _0 = int32x4_of_int64x2   (Sys.opaque_identity _0) in
+  let _1 = int32x4_of_int16x8   (Sys.opaque_identity _1) in
+  let _2 = int32x4_of_int8x16   (Sys.opaque_identity _2) in
+  let _3 = int32x4_of_float32x4 (Sys.opaque_identity _3) in
+  let _4 = int32x4_of_float64x2 (Sys.opaque_identity _4) in
+  let a, b = int32x4_low_int64 _0, int32x4_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = int32x4_low_int64 _1, int32x4_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = int32x4_low_int64 _2, int32x4_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = int32x4_low_int64 _3, int32x4_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = int32x4_low_int64 _4, int32x4_high_int64 _4 in
+  eq a b 9L 10L
+;;
+
+external int16x8_of_int64x2 : int64x2 -> int16x8 = "" "caml_int16x8_of_int64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int16x8_of_int32x4 : int32x4 -> int16x8 = "" "caml_int16x8_of_int32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int16x8_of_int8x16 : int8x16 -> int16x8 = "" "caml_int16x8_of_int8x16" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int16x8_of_float32x4 : float32x4 -> int16x8 = "" "caml_int16x8_of_float32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int16x8_of_float64x2 : float64x2 -> int16x8 = "" "caml_int16x8_of_float64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int64x2_of_int64s   1L 2L in
+  let _1 = int32x4_of_int64s   3L 4L in
+  let _2 = int8x16_of_int64s   5L 6L in
+  let _3 = float32x4_of_int64s 7L 8L in
+  let _4 = float64x2_of_int64s 9L 10L in
+  let _0 = int16x8_of_int64x2   (Sys.opaque_identity _0) in
+  let _1 = int16x8_of_int32x4   (Sys.opaque_identity _1) in
+  let _2 = int16x8_of_int8x16   (Sys.opaque_identity _2) in
+  let _3 = int16x8_of_float32x4 (Sys.opaque_identity _3) in
+  let _4 = int16x8_of_float64x2 (Sys.opaque_identity _4) in
+  let a, b = int16x8_low_int64 _0, int16x8_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = int16x8_low_int64 _1, int16x8_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = int16x8_low_int64 _2, int16x8_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = int16x8_low_int64 _3, int16x8_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = int16x8_low_int64 _4, int16x8_high_int64 _4 in
+  eq a b 9L 10L
+;;
+
+external int8x16_of_int64x2 : int64x2 -> int8x16 = "" "caml_int8x16_of_int64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int8x16_of_int32x4 : int32x4 -> int8x16 = "" "caml_int8x16_of_int32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int8x16_of_int16x8 : int16x8 -> int8x16 = "" "caml_int8x16_of_int16x8" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int8x16_of_float32x4 : float32x4 -> int8x16 = "" "caml_int8x16_of_float32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external int8x16_of_float64x2 : float64x2 -> int8x16 = "" "caml_int8x16_of_float64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int64x2_of_int64s   1L 2L in
+  let _1 = int32x4_of_int64s   3L 4L in
+  let _2 = int16x8_of_int64s   5L 6L in
+  let _3 = float32x4_of_int64s 7L 8L in
+  let _4 = float64x2_of_int64s 9L 10L in
+  let _0 = int8x16_of_int64x2   (Sys.opaque_identity _0) in
+  let _1 = int8x16_of_int32x4   (Sys.opaque_identity _1) in
+  let _2 = int8x16_of_int16x8   (Sys.opaque_identity _2) in
+  let _3 = int8x16_of_float32x4 (Sys.opaque_identity _3) in
+  let _4 = int8x16_of_float64x2 (Sys.opaque_identity _4) in
+  let a, b = int8x16_low_int64 _0, int8x16_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = int8x16_low_int64 _1, int8x16_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = int8x16_low_int64 _2, int8x16_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = int8x16_low_int64 _3, int8x16_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = int8x16_low_int64 _4, int8x16_high_int64 _4 in
+  eq a b 9L 10L
+;;
+
+external float32x4_of_int64x2 : int64x2 -> float32x4 = "" "caml_float32x4_of_int64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_of_int32x4 : int32x4 -> float32x4 = "" "caml_float32x4_of_int32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_of_int16x8 : int16x8 -> float32x4 = "" "caml_float32x4_of_int16x8" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_of_int8x16 : int8x16 -> float32x4 = "" "caml_float32x4_of_int8x16" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_of_float64x2 : float64x2 -> float32x4 = "" "caml_float32x4_of_float64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int64x2_of_int64s   1L 2L in
+  let _1 = int32x4_of_int64s   3L 4L in
+  let _2 = int16x8_of_int64s   5L 6L in
+  let _3 = int8x16_of_int64s   7L 8L in
+  let _4 = float64x2_of_int64s 9L 10L in
+  let _0 = float32x4_of_int64x2   (Sys.opaque_identity _0) in
+  let _1 = float32x4_of_int32x4   (Sys.opaque_identity _1) in
+  let _2 = float32x4_of_int16x8   (Sys.opaque_identity _2) in
+  let _3 = float32x4_of_int8x16   (Sys.opaque_identity _3) in
+  let _4 = float32x4_of_float64x2 (Sys.opaque_identity _4) in
+  let a, b = float32x4_low_int64 _0, float32x4_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = float32x4_low_int64 _1, float32x4_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = float32x4_low_int64 _2, float32x4_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = float32x4_low_int64 _3, float32x4_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = float32x4_low_int64 _4, float32x4_high_int64 _4 in
+  eq a b 9L 10L
+;;
+
+external float64x2_of_int64x2 : int64x2 -> float64x2 = "" "caml_float64x2_of_int64x2" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float64x2_of_int32x4 : int32x4 -> float64x2 = "" "caml_float64x2_of_int32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float64x2_of_int16x8 : int16x8 -> float64x2 = "" "caml_float64x2_of_int16x8" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float64x2_of_int8x16 : int8x16 -> float64x2 = "" "caml_float64x2_of_int8x16" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+external float64x2_of_float32x4 : float32x4 -> float64x2 = "" "caml_float64x2_of_float32x4" 
+  [@@noalloc] [@@unboxed] [@@builtin]
+
+let () = 
+  let _0 = int64x2_of_int64s   1L 2L in
+  let _1 = int32x4_of_int64s   3L 4L in
+  let _2 = int16x8_of_int64s   5L 6L in
+  let _3 = int8x16_of_int64s   7L 8L in
+  let _4 = float32x4_of_int64s 9L 10L in
+  let _0 = float64x2_of_int64x2   (Sys.opaque_identity _0) in
+  let _1 = float64x2_of_int32x4   (Sys.opaque_identity _1) in
+  let _2 = float64x2_of_int16x8   (Sys.opaque_identity _2) in
+  let _3 = float64x2_of_int8x16   (Sys.opaque_identity _3) in
+  let _4 = float64x2_of_float32x4 (Sys.opaque_identity _4) in
+  let a, b = float64x2_low_int64 _0, float64x2_high_int64 _0 in
+  eq a b 1L 2L;
+  let a, b = float64x2_low_int64 _1, float64x2_high_int64 _1 in
+  eq a b 3L 4L;
+  let a, b = float64x2_low_int64 _2, float64x2_high_int64 _2 in
+  eq a b 5L 6L;
+  let a, b = float64x2_low_int64 _3, float64x2_high_int64 _3 in
+  eq a b 7L 8L;
+  let a, b = float64x2_low_int64 _4, float64x2_high_int64 _4 in
+  eq a b 9L 10L
+;;

@@ -157,7 +157,7 @@ let basic (map : spilled_map) (instr : Cfg.basic Cfg.instruction) =
   | Op (Addf | Subf | Mulf | Divf)
   | Op (Specific (Ifloat_min | Ifloat_max | Icrc32q)) ->
     may_use_stack_operand_for_second_argument map instr
-  | Op (Floatofint | Intoffloat) ->
+  | Op (Floatofint | Intoffloat | Vectorcast _) ->
     may_use_stack_operand_for_only_argument map instr ~has_result:true
   | Op (Const_symbol _) ->
     if !Clflags.pic_code || !Clflags.dlcode || Arch.win64 then

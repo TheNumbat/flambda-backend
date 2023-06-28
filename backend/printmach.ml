@@ -225,6 +225,9 @@ let operation' ?(print_reg = reg) op arg ppf res =
   | Iintoffloat -> fprintf ppf "intoffloat %a" reg arg.(0)
   | Ivalueofint -> fprintf ppf "valueofint %a" reg arg.(0)
   | Iintofvalue -> fprintf ppf "intofvalue %a" reg arg.(0)
+  | Ivectorcast (Bits128 {from; to_}) -> 
+    fprintf ppf "vec128[%s->%s] %a" 
+      (Primitive.vec128_name from) (Primitive.vec128_name to_) reg arg.(0)
   | Iopaque -> fprintf ppf "opaque %a" reg arg.(0)
   | Iname_for_debugger { ident; which_parameter; } ->
     fprintf ppf "name_for_debugger %a%s=%a"

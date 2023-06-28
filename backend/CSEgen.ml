@@ -248,7 +248,7 @@ method class_of_operation op =
   | Icompf _
   | Icsel _
   | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
-  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue -> Op_pure
+  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _ -> Op_pure
   | Ispecific _ -> Op_other
   | Iname_for_debugger _ -> Op_pure
   | Iprobe_is_enabled _ -> Op_other
