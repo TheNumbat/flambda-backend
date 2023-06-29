@@ -60,7 +60,7 @@ module Float32x4 : Number_S
 
 module Float64x2 : Number_S
 
-val vec_unboxer : Primitive.vec128_type -> unboxer
+val vector_unboxer : Vector_types.t -> unboxer
 
 module Field : sig
   val unboxing_prim :

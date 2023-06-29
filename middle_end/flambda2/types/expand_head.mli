@@ -33,7 +33,7 @@ module Expanded_type : sig
   val create_naked_nativeint : Type_grammar.head_of_kind_naked_nativeint -> t
 
   val create_naked_vec128 :
-    Primitive.vec128_type -> Type_grammar.head_of_kind_naked_vec128 -> t
+    Vector_types.Vec128.t -> Type_grammar.head_of_kind_naked_vec128 -> t
 
   val create_rec_info : Type_grammar.head_of_kind_rec_info -> t
 
@@ -61,7 +61,7 @@ module Expanded_type : sig
     | Naked_int64 of Type_grammar.head_of_kind_naked_int64
     | Naked_nativeint of Type_grammar.head_of_kind_naked_nativeint
     | Naked_vec128 of
-        Primitive.vec128_type * Type_grammar.head_of_kind_naked_vec128
+        Vector_types.Vec128.t * Type_grammar.head_of_kind_naked_vec128
     | Rec_info of Type_grammar.head_of_kind_rec_info
     | Region of Type_grammar.head_of_kind_region
 
@@ -80,7 +80,7 @@ module Expanded_type : sig
     | Naked_nativeint of
         Type_grammar.head_of_kind_naked_nativeint Or_unknown_or_bottom.t
     | Naked_vec128 of
-        Primitive.vec128_type
+        Vector_types.Vec128.t
         * Type_grammar.head_of_kind_naked_vec128 Or_unknown_or_bottom.t
     | Rec_info of Type_grammar.head_of_kind_rec_info Or_unknown_or_bottom.t
     | Region of Type_grammar.head_of_kind_region Or_unknown_or_bottom.t

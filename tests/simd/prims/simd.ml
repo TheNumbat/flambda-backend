@@ -305,8 +305,8 @@ external float32x4_set4 : float -> float -> float -> float -> float32x4 = "" "ca
   [@@noalloc] [@@unboxed] [@@builtin]
 external float32x4_set1 : float -> float32x4 = "" "caml_sse_float32x4_set1" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_zero : unit -> float32x4 = "" "caml_sse_float32x4_zero" 
-  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_zero : unit -> (float32x4 [@unboxed]) = "" "caml_sse_float32x4_zero" 
+  [@@noalloc] [@@builtin]
 
 external float32x4_move_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_move_high" 
   [@@noalloc] [@@unboxed] [@@builtin]
@@ -316,5 +316,5 @@ external float32x4_shuffle_high : float32x4 -> float32x4 -> float32x4 = "" "caml
   [@@noalloc] [@@unboxed] [@@builtin]
 external float32x4_shuffle_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_shuffle_low" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_shuffle : float32x4 -> float32x4 -> int -> float32x4 = "" "caml_sse_float32x4_move_high" 
-  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_shuffle : (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> int -> (float32x4 [@unboxed]) = "" "caml_sse_float32x4_shuffle" 
+  [@@noalloc] [@@builtin]

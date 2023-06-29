@@ -30,8 +30,7 @@ type to_lift =
   | Boxed_int32 of Int32.t
   | Boxed_int64 of Int64.t
   | Boxed_nativeint of Targetint_32_64.t
-  | Boxed_vec128 of
-      Primitive.vec128_type * Numeric_types.Vec128_by_bit_pattern.t
+  | Boxed_vec128 of Vector_types.Vec128.t * Vector_types.Vec128.Bit_pattern.t
   | Immutable_float_array of { fields : Float.t list }
   | Immutable_value_array of { fields : Simple.t list }
   | Empty_array
@@ -319,8 +318,8 @@ let reify ~allowed_if_free_vars_defined_in ~var_is_defined_at_toplevel
       | Some n -> Simple (Simple.const (Reg_width_const.naked_nativeint n)))
     | Naked_vec128 (vty, Ok ns) -> (
       match
-        Numeric_types.Vec128_by_bit_pattern.Set.get_singleton
-          (ns :> Numeric_types.Vec128_by_bit_pattern.Set.t)
+        Vector_types.Vec128.Bit_pattern.Set.get_singleton
+          (ns :> Vector_types.Vec128.Bit_pattern.Set.t)
       with
       | None -> try_canonical_simple ()
       | Some n -> Simple (Simple.const (Reg_width_const.naked_vec128 vty n)))
@@ -362,12 +361,12 @@ let reify ~allowed_if_free_vars_defined_in ~var_is_defined_at_toplevel
         match Targetint_32_64.Set.get_singleton ns with
         | None -> try_canonical_simple ()
         | Some n -> Lift (Boxed_nativeint n)))
-    | Value (Ok (Boxed_vec128 (vty, ty_naked_vec128, _alloc_mode))) -> (
-      match Provers.meet_naked_vec128s env ty_naked_vec128 with
+    | Value (Ok (Boxed_vector (Vec128 vty, ty_naked_vec128, _alloc_mode))) -> (
+      match Provers.meet_naked_vec128s vty env ty_naked_vec128 with
       | Need_meet -> try_canonical_simple ()
       | Invalid -> Invalid
       | Known_result ns -> (
-        match Numeric_types.Vec128_by_bit_pattern.Set.get_singleton ns with
+        match Vector_types.Vec128.Bit_pattern.Set.get_singleton ns with
         | None -> try_canonical_simple ()
         | Some n -> Lift (Boxed_vec128 (vty, n))))
     | Value
@@ -435,7 +434,7 @@ let reify ~allowed_if_free_vars_defined_in ~var_is_defined_at_toplevel
               Lift (Immutable_float_array { fields = List.rev fields_rev }))
           | Naked_number
               ( Naked_immediate | Naked_int32 | Naked_int64 | Naked_nativeint
-              | Naked_vec128 _ )
+              | Naked_vector _ )
           | Region | Rec_info ->
             Misc.fatal_errorf
               "Unexpected kind %a in immutable array case when reifying type:@ \

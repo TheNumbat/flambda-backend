@@ -24,8 +24,7 @@ type t =
   | Boxed_int64 of Int64.t Or_variable.t
   | Boxed_nativeint of Targetint_32_64.t Or_variable.t
   | Boxed_vec128 of
-      Primitive.vec128_type
-      * Numeric_types.Vec128_by_bit_pattern.t Or_variable.t
+      Vector_types.Vec128.t * Vector_types.Vec128.Bit_pattern.t Or_variable.t
   | Immutable_float_block of
       Numeric_types.Float_by_bit_pattern.t Or_variable.t list
   | Immutable_float_array of
@@ -104,9 +103,9 @@ let [@ocamlformat "disable"] print ppf t =
   | Boxed_vec128 (ty, or_var) ->
     fprintf ppf "@[<hov 1>(%tBoxed_vec128[%s]%t@ %a)@]"
       Flambda_colours.static_part
-      (Primitive.vec128_name ty)
+      (Vector_types.Vec128.name ty)
       Flambda_colours.pop
-      (Or_variable.print Numeric_types.Vec128_by_bit_pattern.print) or_var
+      (Or_variable.print Vector_types.Vec128.Bit_pattern.print) or_var
   | Immutable_float_block fields ->
     fprintf ppf "@[<hov 1>(%tImmutable_float_block%t@ @[[| %a |]@])@]"
       Flambda_colours.static_part
@@ -173,7 +172,7 @@ include Container_types.Make (struct
     | Boxed_nativeint or_var1, Boxed_nativeint or_var2 ->
       Or_variable.compare Targetint_32_64.compare or_var1 or_var2
     | Boxed_vec128 (_, or_var1), Boxed_vec128 (_, or_var2) ->
-      Or_variable.compare Numeric_types.Vec128_by_bit_pattern.compare or_var1
+      Or_variable.compare Vector_types.Vec128.Bit_pattern.compare or_var1
         or_var2
     | Immutable_float_block fields1, Immutable_float_array fields2 ->
       Misc.Stdlib.List.compare

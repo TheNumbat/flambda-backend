@@ -185,7 +185,7 @@ type memory_chunk =
                                           CR mslater: (SIMD) alignment *)
 
 type vector_cast = 
-  | Bits128 of { from : Primitive.vec128_type ; to_ : Primitive.vec128_type }
+  | Bits128 of { from : Lambda.vec128_type ; to_ : Lambda.vec128_type }
 
 type operation =
     Capply of machtype * Lambda.region_close

@@ -55,7 +55,6 @@ let deciders =
     Unboxers.Int32.decider;
     Unboxers.Int64.decider;
     Unboxers.Nativeint.decider;
-    Unboxers.Int8x16.decider;
     Unboxers.Int16x8.decider;
     Unboxers.Int32x4.decider;
     Unboxers.Int64x2.decider;

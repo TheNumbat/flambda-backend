@@ -347,10 +347,10 @@ method! select_operation op args dbg =
          Ispecific Isfence, args
       | "caml_memory_fence", ([|Val|] | [| |]) ->
          Ispecific Imfence, args
-      | _ ->
-        (match Simd.select_operation func with 
+      | _ -> super#select_operation op args dbg
+        (* (match Simd.select_operation func with 
          | Some instr -> Ispecific instr, args
-         | None -> super#select_operation op args dbg)
+         | None -> super#select_operation op args dbg) *)
       end
   (* Recognize store instructions *)
   | Cstore ((Word_int|Word_val as chunk), _init) ->

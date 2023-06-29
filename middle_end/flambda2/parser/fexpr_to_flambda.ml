@@ -238,8 +238,8 @@ let targetint (i : Fexpr.targetint) : Targetint_32_64.t =
 let targetint_31_63 (i : Fexpr.targetint) : Targetint_31_63.t =
   Targetint_31_63.of_int64 i
 
-let vec128 (v0, v1) : Numeric_types.Vec128_by_bit_pattern.t =
-  Numeric_types.Vec128_by_bit_pattern.of_int64s (v0, v1)
+let vec128 (v0, v1) : Vector_types.Vec128.Bit_pattern.t =
+  Vector_types.Vec128.Bit_pattern.of_int64s (v0, v1)
 
 let tag_scannable (tag : Fexpr.tag_scannable) : Tag.Scannable.t =
   Tag.Scannable.create_exn tag
@@ -255,7 +255,7 @@ let rec subkind : Fexpr.subkind -> Flambda_kind.With_subkind.Subkind.t =
   | Boxed_int32 -> Boxed_int32
   | Boxed_int64 -> Boxed_int64
   | Boxed_nativeint -> Boxed_nativeint
-  | Boxed_vec128 ty -> Boxed_vec128 ty
+  | Boxed_vector ty -> Boxed_vector ty
   | Tagged_immediate -> Tagged_immediate
   | Variant { consts; non_consts } ->
     let consts =

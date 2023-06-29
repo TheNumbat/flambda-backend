@@ -61,7 +61,7 @@ module Const : sig
   val naked_nativeint : Targetint_32_64.t -> t
 
   val naked_vec128 :
-    Primitive.vec128_type -> Numeric_types.Vec128_by_bit_pattern.t -> t
+    Vector_types.Vec128.t -> Vector_types.Vec128.Bit_pattern.t -> t
 
   module Descr : sig
     type t = private
@@ -72,7 +72,7 @@ module Const : sig
       | Naked_int64 of Int64.t
       | Naked_nativeint of Targetint_32_64.t
       | Naked_vec128 of
-          Primitive.vec128_type * Numeric_types.Vec128_by_bit_pattern.t
+          Vector_types.Vec128.t * Vector_types.Vec128.Bit_pattern.t
 
     include Container_types.S with type t := t
   end

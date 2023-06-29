@@ -354,7 +354,7 @@ let name env n =
 
 let float f = f |> Numeric_types.Float_by_bit_pattern.to_float
 
-let vec128 v = v |> Numeric_types.Vec128_by_bit_pattern.to_int64s
+let vec128 v = v |> Vector_types.Vec128.Bit_pattern.to_int64s
 
 let targetint i = i |> Targetint_32_64.to_int64
 
@@ -370,7 +370,7 @@ let const c : Fexpr.const =
   | Naked_int32 i -> Naked_int32 i
   | Naked_int64 i -> Naked_int64 i
   | Naked_vec128 (ty, i) ->
-    let v0, v1 = Numeric_types.Vec128_by_bit_pattern.to_int64s i in
+    let v0, v1 = Vector_types.Vec128.Bit_pattern.to_int64s i in
     Naked_vec128 (ty, v0, v1)
   | Naked_nativeint i -> Naked_nativeint (i |> targetint)
 
@@ -426,7 +426,7 @@ let rec subkind (k : Flambda_kind.With_subkind.Subkind.t) : Fexpr.subkind =
   | Boxed_int32 -> Boxed_int32
   | Boxed_int64 -> Boxed_int64
   | Boxed_nativeint -> Boxed_nativeint
-  | Boxed_vec128 ty -> Boxed_vec128 ty
+  | Boxed_vector ty -> Boxed_vector ty
   | Tagged_immediate -> Tagged_immediate
   | Variant { consts; non_consts } -> variant_subkind consts non_consts
   | Float_array -> Float_array

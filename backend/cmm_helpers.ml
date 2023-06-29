@@ -152,7 +152,7 @@ let alloc_float_header mode dbg =
 let alloc_boxedvector_header vi mode dbg =
   let header, local_header =
     match vi with
-    | Primitive.Pvec128 _ -> boxedvec128_header, boxedvec128_local_header
+    | Lambda.Pvec128 _ -> boxedvec128_header, boxedvec128_local_header
   in
   match mode with
   | Lambda.Alloc_heap -> Cconst_natint (header, dbg)
@@ -719,7 +719,7 @@ let box_vector dbg vi m c =
   Cop (Calloc m, [alloc_boxedvector_header vi m dbg; c], dbg)
 
 let rec unbox_vector dbg vi =
-  let load = match vi with Primitive.Pvec128 _ -> Onetwentyeight in
+  let load = match vi with Lambda.Pvec128 _ -> Onetwentyeight in
   map_tail ~kind:Any (function
     | Cop (Calloc _, [Cconst_natint (hdr, _); c], _)
       when Nativeint.equal hdr float_header
@@ -729,7 +729,7 @@ let rec unbox_vector dbg vi =
       match Cmmgen_state.structured_constant_of_sym s.sym_name with
       | Some (Uconst_vec128 (ty, v0, v1)) ->
         (match vi with
-        | Primitive.Pvec128 vty when ty = vty -> ()
+        | Lambda.Pvec128 vty when ty = vty -> ()
         | _ -> assert false);
         Cconst_vec128 (v0, v1, dbg) (* or keep _dbg? *)
       | _ -> Cop (Cload (load, Immutable), [cmm], dbg))
