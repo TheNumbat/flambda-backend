@@ -4,7 +4,7 @@
 (*                                                                        *)
 (*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
 (*                                                                        *)
-(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*   Copyright 2000 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Selection of SIMD pseudo-instructions. *)
+(* SIMD instruction selection for ARM64 *)
 
-val select_operation : string -> Arch.specific_operation option
+open Arch
+
+let select_operation _ = None

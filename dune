@@ -199,6 +199,7 @@
   printmach
   checkmach
   proc
+  simd
   reg
   reload
   reloadgen
