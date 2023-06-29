@@ -36,8 +36,7 @@ method! class_of_operation op =
     | Ibswap _ | Isqrtf -> super#class_of_operation op
     | Irdtsc | Irdpmc
     | Ilfence | Isfence | Imfence -> Op_other
-    | Ifloat_iround | Ifloat_min | Ifloat_max | Ifloat_round _
-    | Icrc32q -> Op_pure
+    | Ifloat_iround | Ifloat_min | Ifloat_max | Ifloat_round _ | Isimd _ -> Op_pure
     | Ipause
     | Iprefetch _ -> Op_other
     end

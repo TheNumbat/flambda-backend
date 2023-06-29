@@ -155,8 +155,11 @@ let binary_operation
 let basic (map : spilled_map) (instr : Cfg.basic Cfg.instruction) =
   begin match instr.desc with
   | Op (Addf | Subf | Mulf | Divf)
-  | Op (Specific (Ifloat_min | Ifloat_max | Icrc32q)) ->
+  | Op (Specific (Ifloat_min | Ifloat_max)) ->
     may_use_stack_operand_for_second_argument map instr
+  | Op (Specific (Isimd op)) -> 
+    (match Simd_selection.register_behavior op with 
+    | Two_arg_instr -> may_use_stack_operand_for_second_argument map instr)
   | Op (Floatofint | Intoffloat | Vectorcast _) ->
     may_use_stack_operand_for_only_argument map instr ~has_result:true
   | Op (Const_symbol _) ->

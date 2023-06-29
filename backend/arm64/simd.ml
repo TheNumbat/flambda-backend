@@ -13,8 +13,6 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* SIMD instruction selection for ARM64 *)
+(* SIMD instructions for ARM64 *)
 
-open Arch
-
-let select_operation _ = None
+type operation = |

@@ -125,8 +125,8 @@ type specific_operation =
   | Ilfence                            (* load fence *)
   | Isfence                            (* store fence *)
   | Imfence                            (* memory fence *)
-  | Icrc32q                            (* compute crc *)
   | Ipause                             (* hint for spin-wait loops *)
+  | Isimd of Simd.operation            (* vectorized operations *) 
   | Iprefetch of                       (* memory prefetching hint *)
       { is_write: bool;
         locality: prefetch_temporal_locality_hint;
@@ -255,8 +255,8 @@ let print_specific_operation printreg op ppf arg =
       fprintf ppf "mfence"
   | Irdpmc ->
       fprintf ppf "rdpmc %a" printreg arg.(0)
-  | Icrc32q ->
-      fprintf ppf "crc32 %a %a" printreg arg.(0) printreg arg.(1)
+  | Isimd simd -> 
+      Simd.print_operation printreg simd ppf arg
   | Ipause ->
       fprintf ppf "pause"
   | Iprefetch { is_write; locality; } ->
@@ -275,8 +275,7 @@ let win64 =
 let operation_is_pure = function
   | Ilea _ | Ibswap _ | Isqrtf | Isextend32 | Izextend32 -> true
   | Ifloatarithmem _ | Ifloatsqrtf _ -> true
-  | Ifloat_iround | Ifloat_round _ | Ifloat_min | Ifloat_max -> true
-  | Icrc32q -> true
+  | Ifloat_iround | Ifloat_round _ | Ifloat_min | Ifloat_max | Isimd _ -> true
   | Irdtsc | Irdpmc | Ipause
   | Ilfence | Isfence | Imfence
   | Istore_int (_, _, _) | Ioffset_loc (_, _)
@@ -288,7 +287,7 @@ let operation_can_raise = function
   | Ilea _ | Ibswap _ | Isqrtf | Isextend32 | Izextend32
   | Ifloatarithmem _ | Ifloatsqrtf _
   | Ifloat_iround | Ifloat_round _ | Ifloat_min | Ifloat_max
-  | Icrc32q | Irdtsc | Irdpmc | Ipause
+  | Irdtsc | Irdpmc | Ipause | Isimd _
   | Ilfence | Isfence | Imfence
   | Istore_int (_, _, _) | Ioffset_loc (_, _)
   | Iprefetch _ -> false
@@ -297,7 +296,7 @@ let operation_allocates = function
   | Ilea _ | Ibswap _ | Isqrtf | Isextend32 | Izextend32
   | Ifloatarithmem _ | Ifloatsqrtf _
   | Ifloat_iround | Ifloat_round _ | Ifloat_min | Ifloat_max
-  | Icrc32q | Irdtsc | Irdpmc | Ipause
+  | Irdtsc | Irdpmc | Ipause | Isimd _
   | Ilfence | Isfence | Imfence
   | Istore_int (_, _, _) | Ioffset_loc (_, _)
   | Iprefetch _ -> false
@@ -390,8 +389,6 @@ let equal_specific_operation left right =
     true
   | Imfence, Imfence ->
     true
-  | Icrc32q, Icrc32q ->
-    true
   | Ifloat_iround, Ifloat_iround -> true
   | Ifloat_round x, Ifloat_round y -> equal_rounding_mode x y
   | Ifloat_min, Ifloat_min -> true
@@ -402,8 +399,10 @@ let equal_specific_operation left right =
     Bool.equal left_is_write right_is_write
     && equal_prefetch_temporal_locality_hint left_locality right_locality
     && equal_addressing_mode left_addr right_addr
+  | Isimd l, Isimd r ->
+    Simd.equal_operation l r 
   | (Ilea _ | Istore_int _ | Ioffset_loc _ | Ifloatarithmem _ | Ibswap _
     | Isqrtf | Ifloatsqrtf _ | Isextend32 | Izextend32 | Irdtsc | Irdpmc
     | Ilfence | Isfence | Imfence | Ifloat_iround | Ifloat_round _ |
-    Ifloat_min | Ifloat_max | Ipause | Icrc32q | Iprefetch _), _ ->
+    Ifloat_min | Ifloat_max | Ipause | Isimd _ | Iprefetch _), _ ->
     false

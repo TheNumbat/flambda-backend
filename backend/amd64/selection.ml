@@ -151,10 +151,14 @@ let pseudoregs_for_operation op arg res =
      and the result is in edx (high) and eax (low).
      Make it simple and force the argument in rcx, and rax and rdx clobbered *)
     ([| rcx |], res)
-  | Ispecific (Ifloat_min | Ifloat_max)
-  | Ispecific Icrc32q ->
+  | Ispecific (Ifloat_min | Ifloat_max) -> 
     (* arg.(0) and res.(0) must be the same *)
     ([|res.(0); arg.(1)|], res)
+  | Ispecific (Isimd op) ->
+    (match Simd_selection.register_behavior op with
+    | Two_arg_instr -> 
+      (* arg.(0) and res.(0) must be the same *)
+      ([|res.(0); arg.(1)|], res))
   | Icsel _ ->
     (* last arg must be the same as res.(0) *)
     let len = Array.length arg in
@@ -348,8 +352,8 @@ method! select_operation op args dbg =
       | "caml_memory_fence", ([|Val|] | [| |]) ->
          Ispecific Imfence, args
       | _ -> 
-        (match Simd.select_operation func with 
-         | Some instr -> Ispecific instr, args
+        (match Simd_selection.select_operation func with 
+         | Some instr -> Ispecific (Isimd instr), args
          | None -> super#select_operation op args dbg) 
       end
   (* Recognize store instructions *)

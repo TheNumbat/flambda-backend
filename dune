@@ -200,6 +200,7 @@
   checkmach
   proc
   simd
+  simd_selection
   reg
   reload
   reloadgen

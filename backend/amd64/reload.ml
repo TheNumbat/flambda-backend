@@ -128,13 +128,18 @@ method! reload_operation op arg res =
       if stackp res.(0)
       then (let r = self#makereg res.(0) in (arg, [|r|]))
       else (arg, res)
-  | Ispecific(Ifloat_min | Ifloat_max)
-  | Ispecific Icrc32q ->
-    (* First argument and result must be in the same register.
-       Second argument can be either in a register or on stack. *)
+  | Ispecific(Ifloat_min | Ifloat_max) -> 
       if stackp arg.(0)
       then (let r = self#makereg arg.(0) in ([|r; arg.(1)|], [|r|]))
       else (arg, res)
+  | Ispecific(Isimd op) ->
+    (match Simd_selection.register_behavior op with 
+    | Two_arg_instr -> 
+      (* First argument and result must be in the same register.
+         Second argument can be either in a register or on stack. *)
+      if stackp arg.(0)
+      then (let r = self#makereg arg.(0) in ([|r; arg.(1)|], [|r|]))
+      else (arg, res))
   | Ifloatofint | Iintoffloat ->
       (* Result must be in register, but argument can be on stack *)
       (arg, (if stackp res.(0) then [| self#makereg res.(0) |] else res))

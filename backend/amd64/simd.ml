@@ -13,44 +13,40 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* SIMD instruction selection for AMD64 *)
+(* SIMD instructions for AMD64 *)
 
-open Arch
+open Format
 
-let select_operation_sse op = match op with _ -> None
+type sse_operation = |
 
-let select_operation_sse2 op =
-  match select_operation_sse op with
-  | Some instr -> instr
-  | None -> ( match op with _ -> None)
+type sse2_operation = |
 
-let select_operation_sse3 op =
-  match select_operation_sse2 op with
-  | Some instr -> instr
-  | None -> (
-    if not !Arch.sse3_support then None else match op with _ -> None)
+type sse3_operation = |
 
-let select_operation_ssse3 op =
-  match select_operation_sse3 op with
-  | Some instr -> instr
-  | None -> (
-    if not !Arch.ssse3_support then None else match op with _ -> None)
+type ssse3_operation = |
 
-let select_operation_sse41 op =
-  match select_operation_ssse3 op with
-  | Some instr -> instr
-  | None -> (
-    if not !Arch.sse41_support then None else match op with _ -> None)
+type sse41_operation = |
 
-let select_operation_sse42 op =
-  match select_operation_sse41 op with
-  | Some instr -> instr
-  | None -> (
-    if not !Arch.sse42_support
-    then None
-    else
-      match op with
-      | "caml_int64_crc_unboxed" | "caml_int_crc_untagged" -> Some Icrc32q
-      | _ -> None)
+type sse42_operation = Crc32q
 
-let select_operation = select_operation_sse42
+type operation =
+  | SSE of sse_operation
+  | SSE2 of sse2_operation
+  | SSE3 of sse3_operation
+  | SSSE3 of ssse3_operation
+  | SSE41 of sse41_operation
+  | SSE42 of sse42_operation
+
+let equal_operation_sse42 l r =
+  match (l : sse42_operation), (r : sse42_operation) with
+  | Crc32q, Crc32q -> true
+
+let equal_operation l r =
+  match l, r with SSE42 l, SSE42 r -> equal_operation_sse42 l r | _ -> .
+
+let print_operation_sse42 printreg op ppf arg =
+  match op with
+  | Crc32q -> fprintf ppf "crc32 %a %a" printreg arg.(0) printreg arg.(1)
+
+let print_operation printreg op ppf arg =
+  match op with SSE42 op -> print_operation_sse42 printreg op ppf arg | _ -> .
