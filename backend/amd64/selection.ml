@@ -156,7 +156,7 @@ let pseudoregs_for_operation op arg res =
     ([|res.(0); arg.(1)|], res)
   | Ispecific (Isimd op) ->
     (match Simd_selection.register_behavior op with
-    | Two_arg_instr -> 
+    | {ret = Fst; _} -> 
       (* arg.(0) and res.(0) must be the same *)
       ([|res.(0); arg.(1)|], res))
   | Icsel _ ->
@@ -174,7 +174,7 @@ let pseudoregs_for_operation op arg res =
               |Ipause|Ilfence|Isfence|Imfence
               |Ioffset_loc (_, _)|Ifloatsqrtf _|Irdtsc|Iprefetch _)
   | Imove|Ispill|Ireload|Ifloatofint|Iintoffloat|Ivalueofint|Iintofvalue
-  | Ivectorcast _
+  | Ivectorcast _ | Iscalarcast _
   | Iconst_int _|Iconst_float _|Iconst_vec128 _
   | Iconst_symbol _|Icall_ind|Icall_imm _|Itailcall_ind|Itailcall_imm _
   | Iextcall _|Istackoffset _|Iload (_, _, _) | Istore (_, _, _)|Ialloc _
@@ -352,8 +352,9 @@ method! select_operation op args dbg =
       | "caml_memory_fence", ([|Val|] | [| |]) ->
          Ispecific Imfence, args
       | _ -> 
-        (match Simd_selection.select_operation func with 
-         | Some instr -> Ispecific (Isimd instr), args
+        (match Simd_selection.select_operation func args dbg with 
+         | Some (op, args) -> 
+            op, args
          | None -> super#select_operation op args dbg) 
       end
   (* Recognize store instructions *)

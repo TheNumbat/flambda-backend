@@ -197,6 +197,12 @@ type memory_chunk =
 type vector_cast = 
   | Bits128 of { from : Primitive.vec128_type ; to_ : Primitive.vec128_type }
 
+type scalar_cast =
+  | Float_to_v128
+  | Float_to_v128_as_32
+  | V128_to_float
+  | V128_as_32_to_float
+
 type operation =
     Capply of machtype * Lambda.region_close
   | Cextcall of
@@ -229,6 +235,7 @@ type operation =
   | Cfloatofint | Cintoffloat
   | Cvalueofint | Cintofvalue
   | Cvectorcast of vector_cast
+  | Cscalarcast of scalar_cast
   | Ccmpf of float_comparison
   | Craise of Lambda.raise_kind
   | Ccheckbound

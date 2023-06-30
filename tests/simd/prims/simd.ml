@@ -262,23 +262,8 @@ let () =
 
 (* SSE: Float32x4 *)
 
-external float32x4_eq : float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_eq" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_neq : float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_neq" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_gt : float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_gt" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_lt :  float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_lt" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_ge : float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_ge" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_le : float32x4 -> float32x4 -> int32x4 = "" "caml_sse_float32x4_le"
-  [@@noalloc] [@@unboxed] [@@builtin]
-
-external float32x4_both_nan : float32x4 -> int32x4 = "" "caml_sse_float32x4_both_nan" 
-  [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_either_nan : float32x4 -> int32x4 = "" "caml_sse_float32x4_either_nan" 
-  [@@noalloc] [@@unboxed] [@@builtin]
+external float32x4_cmp : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (int32x4 [@unboxed]) = "" "caml_sse_float32x4_cmp" 
+  [@@noalloc] [@@builtin]
 
 external float32x4_add : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_add" 
   [@@noalloc] [@@unboxed] [@@builtin]
@@ -301,20 +286,32 @@ external float32x4_rsqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_rsqrt
 external float32x4_sqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_sqrt" 
   [@@noalloc] [@@unboxed] [@@builtin]
 
+(* SSE: conversions / "constants" *)
+
 external float32x4_set4 : float -> float -> float -> float -> float32x4 = "" "caml_sse_float32x4_set4" 
   [@@noalloc] [@@unboxed] [@@builtin]
 external float32x4_set1 : float -> float32x4 = "" "caml_sse_float32x4_set1" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_zero : unit -> (float32x4 [@unboxed]) = "" "caml_sse_float32x4_zero" 
+
+external float32x4_get : int -> (float32x4 [@unboxed]) -> (float [@unboxed]) = "" "caml_sse_float32x4_get" 
+  [@@noalloc] [@@builtin]  
+
+external float32x4_zero : unit -> (float32x4 [@unboxed]) = "" "caml_sse_zero" 
   [@@noalloc] [@@builtin]
 
-external float32x4_move_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_move_high" 
+(* SSE: shuffles *)
+
+external float32x4_move_high_to_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_high_to_low" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_move_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_move_low" 
+external float32x4_move_low_to_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_low_to_high" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_shuffle_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_shuffle_high" 
+external float32x4_interleave_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_high" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_shuffle_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_shuffle_low" 
+external float32x4_interleave_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_low" 
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_shuffle : (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> int -> (float32x4 [@unboxed]) = "" "caml_sse_float32x4_shuffle" 
+external float32x4_shuffle : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) = "" "caml_sse_shuffle" 
   [@@noalloc] [@@builtin]
+
+let () = 
+  let z = float32x4_zero () in 
+  Printf.printf "%Ld %Ld" (float32x4_low_int64 z) (float32x4_high_int64 z)

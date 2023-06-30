@@ -37,6 +37,7 @@ let precondition : Cfg_with_layout.t -> unit =
       | Valueofint -> ()
       | Intofvalue -> ()
       | Vectorcast _ -> ()
+      | Scalarcast _ -> ()
       | Probe_is_enabled _ -> ()
       | Opaque -> ()
       | Begin_region -> ()

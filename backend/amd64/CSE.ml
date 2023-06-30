@@ -43,7 +43,7 @@ method! class_of_operation op =
   | Imove | Ispill | Ireload | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
   | Icompf _
   | Icsel _
-  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _
+  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _ | Iscalarcast _
   | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
   | Icall_ind | Icall_imm _ | Itailcall_ind | Itailcall_imm _ | Iextcall _
   | Istackoffset _ | Iload _ | Istore _ | Ialloc _

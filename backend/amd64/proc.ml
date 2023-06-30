@@ -449,7 +449,7 @@ let destroyed_at_oper = function
        | Icsel _
        | Ifloatofint | Iintoffloat
        | Ivalueofint | Iintofvalue
-       | Ivectorcast _
+       | Ivectorcast _ | Iscalarcast _
        | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
        | Itailcall_ind | Itailcall_imm _ | Istackoffset _ | Iload (_, _, _)
        | Iname_for_debugger _ | Iprobe _| Iprobe_is_enabled _ | Iopaque)
@@ -503,6 +503,7 @@ let destroyed_at_basic (basic : Cfg_intf.S.basic) =
        | Floatofint | Intoffloat
        | Valueofint | Intofvalue
        | Vectorcast _
+       | Scalarcast _
        | Probe_is_enabled _
        | Opaque
        | Begin_region
@@ -586,7 +587,7 @@ let safe_register_pressure = function
   | Ialloc _ | Ipoll _ | Imove | Ispill | Ireload
   | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
   | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _
-  | Icompf _
+  | Icompf _ | Iscalarcast _
   | Icsel _
   | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
   | Icall_ind | Icall_imm _ | Itailcall_ind | Itailcall_imm _
@@ -626,13 +627,13 @@ let max_register_pressure =
             _, _)
   | Imove | Ispill | Ireload | Inegf | Iabsf | Iaddf | Isubf | Imulf | Idivf
   | Icsel _
-  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _
+  | Ifloatofint | Iintoffloat | Ivalueofint | Iintofvalue | Ivectorcast _ | Iscalarcast _
   | Iconst_int _ | Iconst_float _ | Iconst_symbol _ | Iconst_vec128 _
   | Icall_ind | Icall_imm _ | Itailcall_ind | Itailcall_imm _
   | Istackoffset _ | Iload (_, _, _)
   | Ispecific(Ilea _ | Isextend32 | Izextend32 | Iprefetch _ | Ipause
              | Irdtsc | Irdpmc | Istore_int (_, _, _)
-             | Ilfence | Isfence | Imfence
+             | Ilfence | Isfence | Imfence 
              | Ifloat_round _ | Isimd _
              | Ifloat_iround | Ifloat_min | Ifloat_max
              | Ioffset_loc (_, _) | Ifloatarithmem (_, _)
@@ -676,6 +677,7 @@ let operation_supported = function
   | Cnegf | Cabsf | Caddf | Csubf | Cmulf | Cdivf
   | Cfloatofint | Cintoffloat
   | Cvalueofint | Cintofvalue
+  | Cscalarcast _
   | Ccmpf _
   | Craise _
   | Ccheckbound

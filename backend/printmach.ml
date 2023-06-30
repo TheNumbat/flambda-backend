@@ -228,6 +228,10 @@ let operation' ?(print_reg = reg) op arg ppf res =
   | Ivectorcast (Bits128 {from; to_}) -> 
     fprintf ppf "vec128[%s->%s] %a" 
       (Primitive.vec128_name from) (Primitive.vec128_name to_) reg arg.(0)
+  | Iscalarcast Float_to_v128 -> fprintf ppf "float_to_v128 %a" reg arg.(0)
+  | Iscalarcast Float_to_v128_as_32 -> fprintf ppf "float_to_v128_as_32 %a" reg arg.(0)
+  | Iscalarcast V128_to_float -> fprintf ppf "v128_to_float %a" reg arg.(0)
+  | Iscalarcast V128_as_32_to_float -> fprintf ppf "v128_as_32_to_float %a" reg arg.(0)
   | Iopaque -> fprintf ppf "opaque %a" reg arg.(0)
   | Iname_for_debugger { ident; which_parameter; } ->
     fprintf ppf "name_for_debugger %a%s=%a"

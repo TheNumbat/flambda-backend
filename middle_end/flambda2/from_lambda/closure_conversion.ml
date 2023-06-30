@@ -563,7 +563,7 @@ let close_c_call acc env ~loc ~let_bound_ids_with_kinds
           | _, Unboxed_integer Pint64 -> Some (P.Unbox_number Naked_int64)
           | _, Untagged_int -> Some P.Untag_immediate
           | _, Unboxed_vector ty ->
-            Some (P.Unbox_number (Naked_vector (Vector_types.of_lambda ty )))
+            Some (P.Unbox_number (Naked_vector (Vector_types.of_lambda ty)))
         in
         match unbox_arg with
         | None -> fun args acc -> call (arg :: args) acc
