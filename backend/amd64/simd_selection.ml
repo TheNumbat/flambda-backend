@@ -74,7 +74,9 @@ let select_operation_sse op args dbg =
     Some
       ( Shuffle (shuffle_mask 0 0 0 0),
         [Cmm.Cop (Cscalarcast Float_to_v128_as_32, args, dbg)] )
-  (* CR mslater: (SIMD) how do we emit multiple specific instructions *)
+  (* CR mslater: (SIMD) how do we emit multiple specific instructions mslater:
+     overwride emit_expr in selection; change API of this to be able to add
+     several instructions *)
   | "caml_sse_float32x4_set4" -> assert false
   | "caml_sse_float32x4_get" ->
     let i, args = extract_constant args "caml_sse_float32x4_get" in
@@ -83,7 +85,8 @@ let select_operation_sse op args dbg =
     Some (Shuffle (shuffle_mask 0 0 0 i), args)
     (* CR mslater: (SIMD) this also needs a way to generate a Cconst_vec128
        instead of an instruction, or a way to grab an undefined argument of type
-       vec128 *)
+       vec128 mslater: this can be moved to builtin detection in cmm_builtins
+       mslater: remove xor_ps *)
   | "caml_sse_zero" -> Some (Xor_ps, [])
   | _ -> None
 
