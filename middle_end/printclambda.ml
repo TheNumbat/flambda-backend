@@ -70,7 +70,11 @@ let rec structured_constant ppf = function
   | Uconst_int32 x -> fprintf ppf "%ldl" x
   | Uconst_int64 x -> fprintf ppf "%LdL" x
   | Uconst_nativeint x -> fprintf ppf "%ndn" x
+<<<<<<< HEAD
   | Uconst_vec128 {ty; high; low} -> fprintf ppf "[%s]%Ld:%Ld" (Primitive.vec128_name ty) high low
+=======
+  | Uconst_vec128 {high; low} -> fprintf ppf "%016Lx:%016Lx" high low
+>>>>>>> main
   | Uconst_block (tag, l) ->
       fprintf ppf "block(%i" tag;
       List.iter (fun u -> fprintf ppf ",%a" uconstant u) l;
