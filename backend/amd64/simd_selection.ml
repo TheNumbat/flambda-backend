@@ -41,6 +41,8 @@ let extract_constant args name =
 let shuffle_mask x y z w = (x lsl 6) lor (y lsl 4) lor (z lsl 2) lor w
 
 (* TODO: *)
+(* extend reg behavior for 0/1 arg instrs *)
+(* move zero to cmm builtins *)
 (* implement get and set4 *)
 (* add sse2/sse3/ssse3 ops *)
 (* tests for every intrinsic *)
