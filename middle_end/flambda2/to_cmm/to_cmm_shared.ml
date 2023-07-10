@@ -135,8 +135,11 @@ let const ~dbg cst =
   | Naked_float f -> float ~dbg (Numeric_types.Float_by_bit_pattern.to_float f)
   | Naked_int32 i -> int32 ~dbg i
   | Naked_int64 i -> int64 ~dbg i
-  | Naked_vec128 (_, i) ->
-    vec128 ~dbg (Vector_types.Vec128.Bit_pattern.to_int64s i)
+  | Naked_vec128 (_ty, i) ->
+    let { Vector_types.Vec128.Bit_pattern.high; low } =
+      Vector_types.Vec128.Bit_pattern.to_bits i
+    in
+    vec128 ~dbg { high; low }
   | Naked_nativeint t -> targetint ~dbg t
 
 let simple ?consider_inlining_effectful_expressions ~dbg env res s =
@@ -172,8 +175,11 @@ let const_static cst =
   (* We don't compile flambda-backend in 32-bit mode, so nativeint is 64
      bits. *)
   | Naked_int64 i -> [cint (Int64.to_nativeint i)]
-  | Naked_vec128 (_, v) ->
-    [cvec128 (Vector_types.Vec128.Bit_pattern.to_int64s v)]
+  | Naked_vec128 (_ty, v) ->
+    let { Vector_types.Vec128.Bit_pattern.high; low } =
+      Vector_types.Vec128.Bit_pattern.to_bits v
+    in
+    [cvec128 { high; low }]
   | Naked_nativeint t -> [cint (nativeint_of_targetint t)]
 
 let simple_static res s =

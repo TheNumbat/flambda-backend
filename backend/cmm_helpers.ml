@@ -81,10 +81,10 @@ let float_header = block_header Obj.double_tag (size_float / size_addr)
 let float_local_header =
   local_block_header Obj.double_tag (size_float / size_addr)
 
-let boxedvec128_header = block_header Obj.abstract_tag (16 / size_addr)
+let boxedvec128_header = block_header Obj.abstract_tag (size_vec128 / size_addr)
 
 let boxedvec128_local_header =
-  local_block_header Obj.abstract_tag (16 / size_addr)
+  local_block_header Obj.abstract_tag (size_vec128 / size_addr)
 
 let floatarray_header len =
   (* Zero-sized float arrays have tag zero for consistency with
@@ -718,21 +718,18 @@ let rec unbox_float dbg =
 let box_vector dbg vi m c =
   Cop (Calloc m, [alloc_boxedvector_header vi m dbg; c], dbg)
 
-let rec unbox_vector dbg vi =
-  let load = match vi with Lambda.Pvec128 _ -> Onetwentyeight in
+let rec unbox_vec128 ty dbg =
   map_tail ~kind:Any (function
     | Cop (Calloc _, [Cconst_natint (hdr, _); c], _)
-      when Nativeint.equal hdr float_header
-           || Nativeint.equal hdr float_local_header ->
+      when Nativeint.equal hdr boxedvec128_header
+           || Nativeint.equal hdr boxedvec128_local_header ->
       c
     | Cconst_symbol (s, _dbg) as cmm -> (
       match Cmmgen_state.structured_constant_of_sym s.sym_name with
-      | Some (Uconst_vec128 (ty, v0, v1)) ->
-        (match vi with
-        | Lambda.Pvec128 vty when ty = vty -> ()
-        | _ -> assert false);
-        Cconst_vec128 (v0, v1, dbg) (* or keep _dbg? *)
-      | _ -> Cop (Cload (load, Immutable), [cmm], dbg))
+      | Some (Uconst_vec128 { ty = cty; low; high }) ->
+        assert (Lambda.equal_vec128 ty cty);
+        Cconst_vec128 ({ low; high }, dbg) (* or keep _dbg? *)
+      | _ -> Cop (Cload (Onetwentyeight, Immutable), [cmm], dbg))
     | Cregion e as cmm -> (
       (* It is valid to push unboxing inside a Cregion except when the extra
          unboxing logic pushes a tail call out of tail position *)
@@ -740,14 +737,17 @@ let rec unbox_vector dbg vi =
         map_tail ~kind:Any
           (function
             | Cop (Capply (_, Rc_close_at_apply), _, _) -> raise Exit
-            | Ctail e -> Ctail (unbox_vector dbg vi e)
-            | e -> unbox_vector dbg vi e)
+            | Ctail e -> Ctail (unbox_vec128 ty dbg e)
+            | e -> unbox_vec128 ty dbg e)
           e
       with
       | e -> Cregion e
-      | exception Exit -> Cop (Cload (load, Immutable), [cmm], dbg))
-    | Ctail e -> Ctail (unbox_vector dbg vi e)
-    | cmm -> Cop (Cload (load, Immutable), [cmm], dbg))
+      | exception Exit -> Cop (Cload (Onetwentyeight, Immutable), [cmm], dbg))
+    | Ctail e -> Ctail (unbox_vec128 ty dbg e)
+    | cmm -> Cop (Cload (Onetwentyeight, Immutable), [cmm], dbg))
+
+let unbox_vector dbg vi e =
+  match vi with Lambda.Pvec128 ty -> unbox_vec128 ty dbg e
 
 (* Complex *)
 
@@ -1988,7 +1988,8 @@ let box_sized size mode dbg exp =
 
 (* Simplification of some primitives into C calls *)
 
-let default_prim name = Primitive.simple ~name ~arity:0 (*ignored*) ~alloc:true
+let default_prim name =
+  Primitive.simple_on_values ~name ~arity:0 (*ignored*) ~alloc:true
 
 let int64_native_prim name arity ~alloc =
   let u64 = Primitive.(Prim_global, Unboxed_integer Pint64) in
@@ -2795,7 +2796,9 @@ let tuplify_function arity return =
 
 let max_arity_optimized = 15
 
-let ints_per_8b = if Arch.size_int = 4 then 2 else 1
+let ints_per_float = size_float / Arch.size_int
+
+let ints_per_vec128 = size_vec128 / Arch.size_int
 
 let machtype_stored_size t =
   Array.fold_left
@@ -2803,8 +2806,8 @@ let machtype_stored_size t =
       match c with
       | Addr -> Misc.fatal_error "[Addr] cannot be stored"
       | Val | Int -> cur + 1
-      | Float -> cur + ints_per_8b
-      | Vec128 -> cur + (2 * ints_per_8b))
+      | Float -> cur + ints_per_float
+      | Vec128 -> cur + ints_per_vec128)
     0 t
 
 let machtype_non_scanned_size t =
@@ -2814,8 +2817,8 @@ let machtype_non_scanned_size t =
       | Addr -> Misc.fatal_error "[Addr] cannot be stored"
       | Val -> cur
       | Int -> cur + 1
-      | Float -> cur + ints_per_8b
-      | Vec128 -> cur + (2 * ints_per_8b))
+      | Float -> cur + ints_per_float
+      | Vec128 -> cur + ints_per_vec128)
     0 t
 
 let make_tuple l = match l with [e] -> e | _ -> Ctuple l
@@ -2843,10 +2846,10 @@ let read_from_closure_given_machtype t clos base_offset dbg =
         | Int ->
           (non_scanned_pos + 1, scanned_pos), load Word_int non_scanned_pos
         | Float ->
-          ( (non_scanned_pos + ints_per_8b, scanned_pos),
+          ( (non_scanned_pos + ints_per_float, scanned_pos),
             load Double non_scanned_pos )
         | Vec128 ->
-          ( (non_scanned_pos + (2 * ints_per_8b), scanned_pos),
+          ( (non_scanned_pos + ints_per_vec128, scanned_pos),
             load Onetwentyeight non_scanned_pos )
         | Val -> (non_scanned_pos, scanned_pos + 1), load Word_val scanned_pos
         | Addr -> Misc.fatal_error "[Addr] cannot be read")
@@ -3762,8 +3765,8 @@ let emit_nativeint_constant symb n cont =
   emit_block symb boxedintnat_header
     (emit_boxed_nativeint_constant_fields n cont)
 
-let emit_vec128_constant symb (v0, v1) cont =
-  emit_block symb boxedvec128_header (Cvec128 (v0, v1) :: cont)
+let emit_vec128_constant symb bits cont =
+  emit_block symb boxedvec128_header (Cvec128 bits :: cont)
 
 let emit_float_array_constant symb fields cont =
   emit_block symb
@@ -4123,7 +4126,7 @@ let int32 ~dbg i = natint_const_untagged dbg (Nativeint.of_int32 i)
    cross-compiling for 64-bit on a 32-bit host *)
 let int64 ~dbg i = natint_const_untagged dbg (Int64.to_nativeint i)
 
-let vec128 ~dbg (v0, v1) = Cconst_vec128 (v0, v1, dbg)
+let vec128 ~dbg bits = Cconst_vec128 (bits, dbg)
 
 let nativeint ~dbg i = natint_const_untagged dbg i
 
@@ -4388,7 +4391,7 @@ let cint i = Cmm.Cint i
 
 let cfloat f = Cmm.Cdouble f
 
-let cvec128 (a, b) = Cmm.Cvec128 (a, b)
+let cvec128 bits = Cmm.Cvec128 bits
 
 let symbol_address s = Cmm.Csymbol_address s
 

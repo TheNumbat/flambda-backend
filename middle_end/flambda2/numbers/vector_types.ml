@@ -35,12 +35,11 @@ module Vector_by_bit_pattern (Width : Vector_width) = struct
 
     let hash v = Hashtbl.hash v
 
-    let print_int64 ppf t = Format.fprintf ppf "%Ld" t
-
     let print ppf t =
       Format.pp_print_list
         ~pp_sep:(fun ppf () -> Format.pp_print_char ppf ':')
-        print_int64 ppf (Array.to_list t)
+        (fun ppf i64 -> Format.fprintf ppf "%016Lx" i64)
+        ppf (Array.to_list t)
   end
 
   include T0
@@ -51,7 +50,12 @@ module Vector_by_bit_pattern (Width : Vector_width) = struct
 
   let to_int64_array t = t
 
-  let of_int64_array t = t
+  let of_int64_array t =
+    if not (Array.length t = Width.size_in_int64s)
+    then
+      Misc.fatal_error
+        "Vector_by_bit_pattern.of_int64_array: wrong length array";
+    t
 end
 
 module Vec128 = struct
@@ -112,12 +116,17 @@ module Vec128 = struct
       let size_in_int64s = 2
     end)
 
-    let to_int64s t =
-      match to_int64_array t with
-      | [| a; b |] -> a, b
-      | _ -> Misc.fatal_error "Vec128.to_int64s: wrong size vector"
+    type bits =
+      { high : int64;
+        low : int64
+      }
 
-    let of_int64s (v0, v1) = of_int64_array [| v0; v1 |]
+    let to_bits t =
+      match to_int64_array t with
+      | [| high; low |] -> { high; low }
+      | _ -> Misc.fatal_error "Vec128.to_bits: wrong size vector"
+
+    let of_bits { high; low } = of_int64_array [| high; low |]
   end
 end
 

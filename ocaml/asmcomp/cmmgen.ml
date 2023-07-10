@@ -124,7 +124,7 @@ let get_field env layout ptr n dbg =
     | Pvalue Pintval | Punboxed_int _ -> Word_int
     | Pvalue _ -> Word_val
     | Punboxed_float -> Double
-    | Punboxed_vector _ -> 
+    | Punboxed_vector _ ->
       Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
     | Ptop ->
         Misc.fatal_errorf "get_field with Ptop: %a" Debuginfo.print_compact dbg
@@ -543,7 +543,7 @@ let rec transl env e =
           transl_make_array dbg env kind alloc_heap args
       | (Pduparray _, [arg]) ->
           let prim_obj_dup =
-            Primitive.simple ~name:"caml_obj_dup" ~arity:1 ~alloc:true
+            Primitive.simple_on_values ~name:"caml_obj_dup" ~arity:1 ~alloc:true
           in
           transl_ccall env prim_obj_dup [arg] dbg
       | (Pmakearray _, []) ->
@@ -828,9 +828,13 @@ and transl_make_array dbg env kind mode args =
 
 and transl_ccall env prim args dbg =
   let transl_arg native_repr arg =
+    (* CR layouts v2: This match to be extended with
+         | Same_as_ocaml_repr Float64 -> (XFloat, transl env arg)
+       in the PR that adds Float64 *)
     match native_repr with
-    | Same_as_ocaml_repr ->
+    | Same_as_ocaml_repr Value ->
         (XInt, transl env arg)
+    | Same_as_ocaml_repr Void -> assert false
     | Unboxed_float ->
         (XFloat, transl_unbox_float dbg env arg)
     | Unboxed_integer bi ->
@@ -840,7 +844,7 @@ and transl_ccall env prim args dbg =
           | Pint32 -> XInt32
           | Pint64 -> XInt64 in
         (xty, transl_unbox_int dbg env bi arg)
-    | Unboxed_vector _ -> 
+    | Unboxed_vector _ ->
       Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
     | Untagged_int ->
         (XInt, untag_int (transl env arg) dbg)
@@ -860,14 +864,18 @@ and transl_ccall env prim args dbg =
   in
   let typ_res, wrap_result =
     match prim.prim_native_repr_res with
-    | _, Same_as_ocaml_repr -> (typ_val, fun x -> x)
+    (* CR layouts v2: This match to be extended with
+         | Same_as_ocaml_repr Float64 -> (typ_float, fun x -> x)
+       in the PR that adds Float64 *)
+    | _, Same_as_ocaml_repr Value -> (typ_val, fun x -> x)
+    | _, Same_as_ocaml_repr Void -> assert false
     (* TODO: Allow Alloc_local on suitably typed C stubs *)
     | _, Unboxed_float -> (typ_float, box_float dbg alloc_heap)
     | _, Unboxed_integer Pint64 when size_int = 4 ->
         ([|Int; Int|], box_int dbg Pint64 alloc_heap)
     | _, Unboxed_integer bi -> (typ_int, box_int dbg bi alloc_heap)
     | _, Untagged_int -> (typ_int, (fun i -> tag_int i dbg))
-    | _, Unboxed_vector _ -> 
+    | _, Unboxed_vector _ ->
       Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
   in
   let typ_args, args = transl_args prim.prim_native_repr_args args in
@@ -1242,9 +1250,9 @@ and transl_let_value env str (kind : Lambda.value_kind) id exp transl_body =
         Boxed (Boxed_float (alloc_heap, dbg), false)
     | Mutable, Pboxedintval bi ->
         Boxed (Boxed_integer (bi, alloc_heap, dbg), false)
-    | Mutable, Pboxedvectorval _ -> 
-      Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
-    | _, (Pfloatval | Pboxedintval _ | Pboxedvectorval _) ->
+    | _, Pboxedvectorval _ ->
+        Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
+    | _, (Pfloatval | Pboxedintval _) ->
         (* It would be safe to always unbox in this case, but
            we do it only if this indeed allows us to get rid of
            some allocations in the bound expression. *)
@@ -1290,7 +1298,9 @@ and transl_let env str (layout : Lambda.layout) id exp transl_body =
          there may be constant closures inside that need lifting out. *)
       let _cbody : expression = transl_body env in
       cexp
-  | Punboxed_float | Punboxed_int _ | Punboxed_vector _ -> begin
+  | Punboxed_vector _ ->
+      Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
+  | Punboxed_float | Punboxed_int _ -> begin
       let cexp = transl env exp in
       let cbody = transl_body env in
       match str with

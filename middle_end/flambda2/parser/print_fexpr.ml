@@ -257,8 +257,8 @@ let const ppf (c : Fexpr.const) =
   | Naked_int32 i -> Format.fprintf ppf "%lil" i
   | Naked_int64 i -> Format.fprintf ppf "%LiL" i
   | Naked_nativeint i -> Format.fprintf ppf "%Lin" i
-  | Naked_vec128 (ty, v0, v1) ->
-    Format.fprintf ppf "[%s]%Ld:%Ld" (Vector_types.Vec128.name ty) v0 v1
+  | Naked_vec128 (ty, { high; low }) ->
+    Format.fprintf ppf "[%s]%Ld:%Ld" (Vector_types.Vec128.name ty) high low
 
 let rec simple ppf : simple -> unit = function
   | Symbol s -> symbol ppf s
@@ -323,8 +323,8 @@ let static_data ppf : static_data -> unit = function
   | Boxed_int32 (Const i) -> Format.fprintf ppf "%lil" i
   | Boxed_int64 (Const i) -> Format.fprintf ppf "%LiL" i
   | Boxed_nativeint (Const i) -> Format.fprintf ppf "%Lin" i
-  | Boxed_vec128 (ty, Const (v0, v1)) ->
-    Format.fprintf ppf "[%s]%Ld:%Ld" (Vector_types.Vec128.name ty) v0 v1
+  | Boxed_vec128 (ty, Const { high; low }) ->
+    Format.fprintf ppf "[%s]%Ld:%Ld" (Vector_types.Vec128.name ty) high low
   | Boxed_float (Var v) -> boxed_variable ppf v ~kind:"float"
   | Boxed_int32 (Var v) -> boxed_variable ppf v ~kind:"int32"
   | Boxed_int64 (Var v) -> boxed_variable ppf v ~kind:"int64"

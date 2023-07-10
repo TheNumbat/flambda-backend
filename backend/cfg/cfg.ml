@@ -247,7 +247,8 @@ let dump_op ppf = function
   | Const_int n -> Format.fprintf ppf "const_int %nd" n
   | Const_float f -> Format.fprintf ppf "const_float %F" (Int64.float_of_bits f)
   | Const_symbol s -> Format.fprintf ppf "const_symbol %s" s.sym_name
-  | Const_vec128 (v0, v1) -> Format.fprintf ppf "const vec128 %Ld:%Ld" v0 v1
+  | Const_vec128 { high; low } ->
+    Format.fprintf ppf "const vec128 %016Lx:%016Lx" high low
   | Stackoffset n -> Format.fprintf ppf "stackoffset %d" n
   | Load _ -> Format.fprintf ppf "load"
   | Store _ -> Format.fprintf ppf "store"
@@ -508,17 +509,21 @@ let is_pure_basic : basic -> bool = function
        local stack slots nor calls). *)
     false
 
+let same_location (r1 : Reg.t) (r2 : Reg.t) =
+  Reg.same_loc r1 r2
+  &&
+  match r1.loc with
+  | Unknown -> false
+  | Reg _ -> Proc.register_class r1 = Proc.register_class r2
+  | Stack _ -> Proc.stack_slot_class r1.typ = Proc.stack_slot_class r2.typ
+
 let is_noop_move instr =
   match instr.desc with
-  | Op (Move | Spill | Reload) ->
-    (match instr.arg.(0).loc with
-    | Unknown -> false
-    | Reg _ | Stack _ -> Reg.same_loc instr.arg.(0) instr.res.(0))
-    && Proc.register_class instr.arg.(0) = Proc.register_class instr.res.(0)
-  | Op (Vectorcast _ | Scalarcast (Float_to_v128 | V128_to_float)) -> (
-    match instr.arg.(0).loc with
-    | Unknown -> false
-    | Reg _ | Stack _ -> Reg.same_loc instr.arg.(0) instr.res.(0))
+  | Op
+      ( Move | Spill | Reload
+      | Scalarcast (Float_to_v128 | V128_to_float)
+      | Vectorcast _ ) ->
+    same_location instr.arg.(0) instr.res.(0)
   | Op (Csel _) -> (
     match instr.res.(0).loc with
     | Unknown -> false

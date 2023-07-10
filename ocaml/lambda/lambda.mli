@@ -253,13 +253,13 @@ and block_shape =
 and boxed_integer = Primitive.boxed_integer =
     Pnativeint | Pint32 | Pint64
 
-and vec128_type = Primitive.vec128_type = 
+and vec128_type = Primitive.vec128_type =
   | Int8x16
   | Int16x8
   | Int32x4
   | Int64x2
   | Float32x4
-  | Float64x2 
+  | Float64x2
 
 and boxed_vector = Primitive.boxed_vector =
   | Pvec128 of vec128_type
@@ -294,6 +294,8 @@ val compatible_layout : layout -> layout -> bool
 val equal_boxed_integer : boxed_integer -> boxed_integer -> bool
 
 val equal_boxed_vector : boxed_vector -> boxed_vector -> bool
+
+val equal_vec128 : vec128_type -> vec128_type -> bool
 
 val must_be_value : layout -> value_kind
 
@@ -542,7 +544,7 @@ val layout_module : layout
 val layout_functor : layout
 val layout_module_field : layout
 val layout_string : layout
-val layout_float : layout
+val layout_boxed_float : layout
 val layout_boxedint : boxed_integer -> layout
 (* A layout that is Pgenval because it is the field of a block *)
 val layout_field : layout
@@ -552,6 +554,8 @@ val layout_lazy_contents : layout
 val layout_any_value : layout
 (* A layout that is Pgenval because it is bound by a letrec *)
 val layout_letrec : layout
+(* The probe hack: Free vars in probes must have layout value. *)
+val layout_probe_arg : layout
 
 val layout_top : layout
 val layout_bottom : layout

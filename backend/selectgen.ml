@@ -480,7 +480,7 @@ method is_simple_expr = function
   | Cconst_natint _ -> true
   | Cconst_float _ -> true
   | Cconst_symbol _ -> true
-  | Cconst_vec128 _ -> true 
+  | Cconst_vec128 _ -> true
   | Cvar _ -> true
   | Ctuple el -> List.for_all self#is_simple_expr el
   | Clet(_id, arg, body) | Clet_mut(_id, _, arg, body) ->
@@ -864,9 +864,9 @@ method emit_expr_aux (env:environment) exp :
   | Cconst_float (n, _dbg) ->
       let r = self#regs_for typ_float in
       ret (self#insert_op env (Iconst_float (Int64.bits_of_float n)) [||] r)
-  | Cconst_vec128 (v0, v1, _dbg) ->
+  | Cconst_vec128 (bits, _dbg) ->
     let r = self#regs_for typ_vec128 in
-    ret (self#insert_op env (Iconst_vec128 (v0, v1)) [||] r)
+    ret (self#insert_op env (Iconst_vec128 bits) [||] r)
   | Cconst_symbol (n, _dbg) ->
       (* Cconst_symbol _ evaluates to a statically-allocated address, so its
          value fits in a typ_int register and is never changed by the GC.
@@ -1386,10 +1386,10 @@ method emit_stores env data regs_addr =
             Istore(_, _, _) ->
               for i = 0 to Array.length regs - 1 do
                 let r = regs.(i) in
-                let kind = match r.typ with 
-                  | Float -> Double 
+                let kind = match r.typ with
+                  | Float -> Double
                   | Vec128 -> Onetwentyeight
-                  | _ ->  Word_val 
+                  | Val | Addr | Int ->  Word_val
                 in
                 self#insert env
                             (Iop(Istore(kind, !a, false)))
@@ -1678,7 +1678,7 @@ method emit_fundecl ~future_funcnames f =
     fun_codegen_options = f.Cmm.fun_codegen_options;
     fun_dbg  = f.Cmm.fun_dbg;
     fun_poll = f.Cmm.fun_poll;
-    fun_num_stack_slots = Array.make Proc.num_register_classes 0;
+    fun_num_stack_slots = Array.make Proc.num_stack_slot_classes 0;
     fun_contains_calls = !contains_calls;
   }
 

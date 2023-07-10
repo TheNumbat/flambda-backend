@@ -4,36 +4,36 @@ open Stdlib
    and __m128d for float64, but all three of these types are just 16-aligned
    16-byte blocks of memory, so the same stubs work for all types. *)
 
-external int64x2_of_int64s : int64 -> int64 -> int64x2 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external int64x2_low_int64 : int64x2 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external int64x2_high_int64 : int64x2 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external int64x2_of_int64s : int64 -> int64 -> int64x2 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external int64x2_low_int64 : int64x2 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external int64x2_high_int64 : int64x2 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-external int32x4_of_int64s : int64 -> int64 -> int32x4 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external int32x4_low_int64 : int32x4 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external int32x4_high_int64 : int32x4 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external int32x4_of_int64s : int64 -> int64 -> int32x4 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external int32x4_low_int64 : int32x4 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external int32x4_high_int64 : int32x4 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-external int16x8_of_int64s : int64 -> int64 -> int16x8 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external int16x8_low_int64 : int16x8 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external int16x8_high_int64 : int16x8 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external int16x8_of_int64s : int64 -> int64 -> int16x8 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external int16x8_low_int64 : int16x8 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external int16x8_high_int64 : int16x8 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-external int8x16_of_int64s : int64 -> int64 -> int8x16 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external int8x16_low_int64 : int8x16 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external int8x16_high_int64 : int8x16 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external int8x16_of_int64s : int64 -> int64 -> int8x16 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external int8x16_low_int64 : int8x16 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external int8x16_high_int64 : int8x16 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-external float32x4_of_int64s : int64 -> int64 -> float32x4 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external float32x4_low_int64 : float32x4 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external float32x4_high_int64 : float32x4 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external float32x4_of_int64s : int64 -> int64 -> float32x4 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external float32x4_low_int64 : float32x4 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external float32x4_high_int64 : float32x4 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-external float64x2_of_int64s : int64 -> int64 -> float64x2 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external float64x2_low_int64 : float64x2 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external float64x2_high_int64 : float64x2 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external float64x2_of_int64s : int64 -> int64 -> float64x2 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external float64x2_low_int64 : float64x2 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external float64x2_high_int64 : float64x2 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
-let eq lv hv l h = 
-  if l <> lv then Printf.printf "%Ld <> %Ld\n" l lv; 
+let eq lv hv l h =
+  if l <> lv then Printf.printf "%Ld <> %Ld\n" l lv;
   if h <> hv then Printf.printf "%Ld <> %Ld\n" h hv
 ;;
 
-let () = 
+let () =
   let a : int8x16 = int8x16_of_int64s 1L 2L in
   let b : int16x8 = int16x8_of_int64s 3L 4L in
   let c : int32x4 = int32x4_of_int64s 5L 6L in
@@ -56,18 +56,18 @@ let () =
 
 (* Conversions *)
 
-external int64x2_of_int32x4 : int32x4 -> int64x2 = "" "caml_int64x2_of_int32x4" 
+external int64x2_of_int32x4 : int32x4 -> int64x2 = "" "caml_int64x2_of_int32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int64x2_of_int16x8 : int16x8 -> int64x2 = "" "caml_int64x2_of_int16x8" 
+external int64x2_of_int16x8 : int16x8 -> int64x2 = "" "caml_int64x2_of_int16x8"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int64x2_of_int8x16 : int8x16 -> int64x2 = "" "caml_int64x2_of_int8x16" 
+external int64x2_of_int8x16 : int8x16 -> int64x2 = "" "caml_int64x2_of_int8x16"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int64x2_of_float32x4 : float32x4 -> int64x2 = "" "caml_int64x2_of_float32x4" 
+external int64x2_of_float32x4 : float32x4 -> int64x2 = "" "caml_int64x2_of_float32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int64x2_of_float64x2 : float64x2 -> int64x2 = "" "caml_int64x2_of_float64x2" 
+external int64x2_of_float64x2 : float64x2 -> int64x2 = "" "caml_int64x2_of_float64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int32x4_of_int64s   1L 2L in
   let _1 = int16x8_of_int64s   3L 4L in
   let _2 = int8x16_of_int64s   5L 6L in
@@ -90,18 +90,18 @@ let () =
   eq a b 9L 10L
 ;;
 
-external int32x4_of_int64x2 : int64x2 -> int32x4 = "" "caml_int32x4_of_int64x2" 
+external int32x4_of_int64x2 : int64x2 -> int32x4 = "" "caml_int32x4_of_int64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int32x4_of_int16x8 : int16x8 -> int32x4 = "" "caml_int32x4_of_int16x8" 
+external int32x4_of_int16x8 : int16x8 -> int32x4 = "" "caml_int32x4_of_int16x8"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int32x4_of_int8x16 : int8x16 -> int32x4 = "" "caml_int32x4_of_int8x16" 
+external int32x4_of_int8x16 : int8x16 -> int32x4 = "" "caml_int32x4_of_int8x16"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int32x4_of_float32x4 : float32x4 -> int32x4 = "" "caml_int32x4_of_float32x4" 
+external int32x4_of_float32x4 : float32x4 -> int32x4 = "" "caml_int32x4_of_float32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int32x4_of_float64x2 : float64x2 -> int32x4 = "" "caml_int32x4_of_float64x2" 
+external int32x4_of_float64x2 : float64x2 -> int32x4 = "" "caml_int32x4_of_float64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int64x2_of_int64s   1L 2L in
   let _1 = int16x8_of_int64s   3L 4L in
   let _2 = int8x16_of_int64s   5L 6L in
@@ -124,18 +124,18 @@ let () =
   eq a b 9L 10L
 ;;
 
-external int16x8_of_int64x2 : int64x2 -> int16x8 = "" "caml_int16x8_of_int64x2" 
+external int16x8_of_int64x2 : int64x2 -> int16x8 = "" "caml_int16x8_of_int64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int16x8_of_int32x4 : int32x4 -> int16x8 = "" "caml_int16x8_of_int32x4" 
+external int16x8_of_int32x4 : int32x4 -> int16x8 = "" "caml_int16x8_of_int32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int16x8_of_int8x16 : int8x16 -> int16x8 = "" "caml_int16x8_of_int8x16" 
+external int16x8_of_int8x16 : int8x16 -> int16x8 = "" "caml_int16x8_of_int8x16"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int16x8_of_float32x4 : float32x4 -> int16x8 = "" "caml_int16x8_of_float32x4" 
+external int16x8_of_float32x4 : float32x4 -> int16x8 = "" "caml_int16x8_of_float32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int16x8_of_float64x2 : float64x2 -> int16x8 = "" "caml_int16x8_of_float64x2" 
+external int16x8_of_float64x2 : float64x2 -> int16x8 = "" "caml_int16x8_of_float64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int64x2_of_int64s   1L 2L in
   let _1 = int32x4_of_int64s   3L 4L in
   let _2 = int8x16_of_int64s   5L 6L in
@@ -158,18 +158,18 @@ let () =
   eq a b 9L 10L
 ;;
 
-external int8x16_of_int64x2 : int64x2 -> int8x16 = "" "caml_int8x16_of_int64x2" 
+external int8x16_of_int64x2 : int64x2 -> int8x16 = "" "caml_int8x16_of_int64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int8x16_of_int32x4 : int32x4 -> int8x16 = "" "caml_int8x16_of_int32x4" 
+external int8x16_of_int32x4 : int32x4 -> int8x16 = "" "caml_int8x16_of_int32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int8x16_of_int16x8 : int16x8 -> int8x16 = "" "caml_int8x16_of_int16x8" 
+external int8x16_of_int16x8 : int16x8 -> int8x16 = "" "caml_int8x16_of_int16x8"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int8x16_of_float32x4 : float32x4 -> int8x16 = "" "caml_int8x16_of_float32x4" 
+external int8x16_of_float32x4 : float32x4 -> int8x16 = "" "caml_int8x16_of_float32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external int8x16_of_float64x2 : float64x2 -> int8x16 = "" "caml_int8x16_of_float64x2" 
+external int8x16_of_float64x2 : float64x2 -> int8x16 = "" "caml_int8x16_of_float64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int64x2_of_int64s   1L 2L in
   let _1 = int32x4_of_int64s   3L 4L in
   let _2 = int16x8_of_int64s   5L 6L in
@@ -192,18 +192,18 @@ let () =
   eq a b 9L 10L
 ;;
 
-external float32x4_of_int64x2 : int64x2 -> float32x4 = "" "caml_float32x4_of_int64x2" 
+external float32x4_of_int64x2 : int64x2 -> float32x4 = "" "caml_float32x4_of_int64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_of_int32x4 : int32x4 -> float32x4 = "" "caml_float32x4_of_int32x4" 
+external float32x4_of_int32x4 : int32x4 -> float32x4 = "" "caml_float32x4_of_int32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_of_int16x8 : int16x8 -> float32x4 = "" "caml_float32x4_of_int16x8" 
+external float32x4_of_int16x8 : int16x8 -> float32x4 = "" "caml_float32x4_of_int16x8"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_of_int8x16 : int8x16 -> float32x4 = "" "caml_float32x4_of_int8x16" 
+external float32x4_of_int8x16 : int8x16 -> float32x4 = "" "caml_float32x4_of_int8x16"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_of_float64x2 : float64x2 -> float32x4 = "" "caml_float32x4_of_float64x2" 
+external float32x4_of_float64x2 : float64x2 -> float32x4 = "" "caml_float32x4_of_float64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int64x2_of_int64s   1L 2L in
   let _1 = int32x4_of_int64s   3L 4L in
   let _2 = int16x8_of_int64s   5L 6L in
@@ -226,18 +226,18 @@ let () =
   eq a b 9L 10L
 ;;
 
-external float64x2_of_int64x2 : int64x2 -> float64x2 = "" "caml_float64x2_of_int64x2" 
+external float64x2_of_int64x2 : int64x2 -> float64x2 = "" "caml_float64x2_of_int64x2"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float64x2_of_int32x4 : int32x4 -> float64x2 = "" "caml_float64x2_of_int32x4" 
+external float64x2_of_int32x4 : int32x4 -> float64x2 = "" "caml_float64x2_of_int32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float64x2_of_int16x8 : int16x8 -> float64x2 = "" "caml_float64x2_of_int16x8" 
+external float64x2_of_int16x8 : int16x8 -> float64x2 = "" "caml_float64x2_of_int16x8"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float64x2_of_int8x16 : int8x16 -> float64x2 = "" "caml_float64x2_of_int8x16" 
+external float64x2_of_int8x16 : int8x16 -> float64x2 = "" "caml_float64x2_of_int8x16"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float64x2_of_float32x4 : float32x4 -> float64x2 = "" "caml_float64x2_of_float32x4" 
+external float64x2_of_float32x4 : float32x4 -> float64x2 = "" "caml_float64x2_of_float32x4"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-let () = 
+let () =
   let _0 = int64x2_of_int64s   1L 2L in
   let _1 = int32x4_of_int64s   3L 4L in
   let _2 = int16x8_of_int64s   5L 6L in
@@ -262,56 +262,56 @@ let () =
 
 (* SSE: Float32x4 *)
 
-external float32x4_cmp : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (int32x4 [@unboxed]) = "" "caml_sse_float32x4_cmp" 
+external float32x4_cmp : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (int32x4 [@unboxed]) = "" "caml_sse_float32x4_cmp"
   [@@noalloc] [@@builtin]
 
-external float32x4_add : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_add" 
+external float32x4_add : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_add"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_sub : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_sub" 
+external float32x4_sub : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_sub"
   [@@noalloc] [@@unboxed] [@@builtin]
 external float32x4_mul : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_mul"
-  [@@noalloc] [@@unboxed] [@@builtin] 
+  [@@noalloc] [@@unboxed] [@@builtin]
 external float32x4_div : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_div"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-external float32x4_max : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_max" 
+external float32x4_max : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_max"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_min : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_min" 
+external float32x4_min : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_float32x4_min"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-external float32x4_rcp : float32x4 -> float32x4 = "" "caml_sse_float32x4_rcp" 
+external float32x4_rcp : float32x4 -> float32x4 = "" "caml_sse_float32x4_rcp"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_rsqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_rsqrt" 
+external float32x4_rsqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_rsqrt"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_sqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_sqrt" 
+external float32x4_sqrt : float32x4 -> float32x4 = "" "caml_sse_float32x4_sqrt"
   [@@noalloc] [@@unboxed] [@@builtin]
 
 (* SSE: conversions / "constants" *)
 
-external float32x4_set4 : float -> float -> float -> float -> float32x4 = "" "caml_sse_float32x4_set4" 
+external float32x4_set4 : float -> float -> float -> float -> float32x4 = "" "caml_sse_float32x4_set4"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_set1 : float -> float32x4 = "" "caml_sse_float32x4_set1" 
+external float32x4_set1 : float -> float32x4 = "" "caml_sse_float32x4_set1"
   [@@noalloc] [@@unboxed] [@@builtin]
 
-external float32x4_get : int -> (float32x4 [@unboxed]) -> (float [@unboxed]) = "" "caml_sse_float32x4_get" 
-  [@@noalloc] [@@builtin]  
+external float32x4_get : int -> (float32x4 [@unboxed]) -> (float [@unboxed]) = "" "caml_sse_float32x4_get"
+  [@@noalloc] [@@builtin]
 
-external float32x4_zero : unit -> (float32x4 [@unboxed]) = "" "caml_sse_zero" 
+external float32x4_zero : unit -> (float32x4 [@unboxed]) = "" "caml_sse_zero"
   [@@noalloc] [@@builtin]
 
 (* SSE: shuffles *)
 
-external float32x4_move_high_to_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_high_to_low" 
+external float32x4_move_high_to_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_high_to_low"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_move_low_to_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_low_to_high" 
+external float32x4_move_low_to_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_move_low_to_high"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_interleave_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_high" 
+external float32x4_interleave_high : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_high"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_interleave_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_low" 
+external float32x4_interleave_low : float32x4 -> float32x4 -> float32x4 = "" "caml_sse_interleave_low"
   [@@noalloc] [@@unboxed] [@@builtin]
-external float32x4_shuffle : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) = "" "caml_sse_shuffle" 
+external float32x4_shuffle : int -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) -> (float32x4 [@unboxed]) = "" "caml_sse_shuffle"
   [@@noalloc] [@@builtin]
 
-let () = 
-  let z = float32x4_zero () in 
+let () =
+  let z = float32x4_zero () in
   Printf.printf "%Ld %Ld" (float32x4_low_int64 z) (float32x4_high_int64 z)

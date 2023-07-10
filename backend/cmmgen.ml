@@ -276,8 +276,8 @@ let emit_structured_constant symb cst cont =
       emit_int64_constant symb n cont
   | Uconst_nativeint n ->
       emit_nativeint_constant symb n cont
-  | Uconst_vec128 (_, v0, v1) -> 
-      emit_vec128_constant symb (v0, v1) cont 
+  | Uconst_vec128 {ty = _; high; low} ->
+      emit_vec128_constant symb {high; low} cont
   | Uconst_block (tag, csts) ->
       let cont = List.fold_right emit_constant csts cont in
       emit_block symb (block_header tag (List.length csts)) cont
@@ -355,7 +355,7 @@ let unbox_number dbg bn arg =
     low_32 dbg (unbox_int dbg Pint32 arg)
   | Boxed_integer (bi, _, _) ->
     unbox_int dbg bi arg
-  | Boxed_vector (vi, _, _) -> 
+  | Boxed_vector (vi, _, _) ->
     unbox_vector dbg vi arg
 
 (* Auxiliary functions for optimizing "let" of boxed numbers (floats and
@@ -422,7 +422,7 @@ let rec is_unboxed_number_cmm = function
           Boxed (Boxed_integer (Pint32, alloc_heap, Debuginfo.none), true)
         | Some (Uconst_int64 _) ->
           Boxed (Boxed_integer (Pint64, alloc_heap, Debuginfo.none), true)
-        | Some (Uconst_vec128 (ty, _, _)) ->
+        | Some (Uconst_vec128 {ty; _}) ->
           Boxed (Boxed_vector (Pvec128 ty, alloc_heap, Debuginfo.none), true)
         | _ ->
           No_unboxing
@@ -623,7 +623,7 @@ let rec transl env e =
           transl_make_array dbg env kind alloc_heap args
       | (Pduparray _, [arg]) ->
           let prim_obj_dup =
-            Primitive.simple ~name:"caml_obj_dup" ~arity:1 ~alloc:true
+            Primitive.simple_on_values ~name:"caml_obj_dup" ~arity:1 ~alloc:true
           in
           transl_ccall env prim_obj_dup [arg] dbg
       | (Pmakearray _, []) ->
@@ -906,9 +906,13 @@ and transl_make_array dbg env kind mode args =
 
 and transl_ccall env prim args dbg =
   let transl_arg native_repr arg =
+    (* CR layouts v2: This match to be extended with
+         | Same_as_ocaml_repr Float64 -> (XFloat, transl env arg)
+       in the PR that adds Float64 *)
     match native_repr with
-    | Same_as_ocaml_repr ->
+    | Same_as_ocaml_repr Value ->
         (XInt, transl env arg)
+    | Same_as_ocaml_repr Void -> assert false
     | Unboxed_float ->
         (XFloat, transl_unbox_float dbg env arg)
     | Unboxed_integer bi ->
@@ -922,7 +926,7 @@ and transl_ccall env prim args dbg =
           let xty =
             match bi with
             | Pvec128 _ -> XVec128
-          in 
+          in
           (xty, transl_unbox_vector dbg env bi arg)
     | Untagged_int ->
         (XInt, untag_int (transl env arg) dbg)
@@ -941,8 +945,12 @@ and transl_ccall env prim args dbg =
         (ty1 :: tys, arg' :: args')
   in
   let typ_res, wrap_result =
+    (* CR layouts v2: This match to be extended with
+         | Same_as_ocaml_repr Float64 -> (typ_float, fun x -> x)
+       in the PR that adds Float64 *)
     match prim.prim_native_repr_res with
-    | _, Same_as_ocaml_repr -> (typ_val, fun x -> x)
+    | _, Same_as_ocaml_repr Value -> (typ_val, fun x -> x)
+    | _, Same_as_ocaml_repr Void -> assert false
     (* TODO: Allow Alloc_local on suitably typed C stubs *)
     | _, Unboxed_float -> (typ_float, box_float dbg alloc_heap)
     | _, Unboxed_integer Pint64 when size_int = 4 ->

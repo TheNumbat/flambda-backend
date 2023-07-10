@@ -19,7 +19,7 @@ open X86_proc
 let bprintf = Printf.bprintf
 
 let string_of_datatype = function
-  | VEC128 -> "VEC128"
+  | VEC128 -> "XMMWORD"
   | QWORD -> "QWORD"
   | NONE -> assert false
   | REAL4 -> "REAL4"
@@ -32,7 +32,7 @@ let string_of_datatype = function
 
 
 let string_of_datatype_ptr = function
-  | VEC128 -> "VEC128 PTR "
+  | VEC128 -> "XMMWORD PTR "
   | QWORD -> "QWORD PTR "
   | NONE -> ""
   | REAL4 -> "REAL4 PTR "
@@ -81,8 +81,7 @@ let arg b = function
   | Reg16 x -> Buffer.add_string b (string_of_reg16 x)
   | Reg32 x -> Buffer.add_string b (string_of_reg32 x)
   | Reg64 x -> Buffer.add_string b (string_of_reg64 x)
-  | Regf x -> Buffer.add_string b (string_of_registerf x)
-  | Reg128 x -> Buffer.add_string b (string_of_regSIMD x)
+  | Regf x -> Buffer.add_string b (string_of_regf x)
 
   (* We don't need to specify RIP on Win64, since EXTERN will provide
      the list of external symbols that need this addressing mode, and

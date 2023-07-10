@@ -33,11 +33,11 @@ let fastcode_flag = ref true
 
 (* Names for special regs *)
 
-let reg_domain_state_ptr = phys_reg 25 (* x28 *)
-let reg_trap_ptr = phys_reg 23 (* x26 *)
-let reg_alloc_ptr = phys_reg 24 (* x27 *)
-let reg_tmp1 = phys_reg 26 (* x16 *)
-let reg_x8 = phys_reg 8 (* x8 *)
+let reg_domain_state_ptr = phys_reg Int 25 (* x28 *)
+let reg_trap_ptr = phys_reg Int 23 (* x26 *)
+let reg_alloc_ptr = phys_reg Int 24 (* x27 *)
+let reg_tmp1 = phys_reg Int 26 (* x16 *)
+let reg_x8 = phys_reg Int 8 (* x8 *)
 
 (* Output a label *)
 
@@ -71,7 +71,7 @@ let emit_symbol_size sym =
 (* Output a pseudo-register *)
 
 let emit_reg = function
-    {loc = Reg r} -> emit_string (register_name r)
+    {loc = Reg r; typ} -> emit_string (register_name typ r)
   | _ -> fatal_error "Emit.emit_reg"
 
 (* Likewise, but with the 32-bit name of the register *)
@@ -90,7 +90,7 @@ let emit_wreg = function
 
 let stack_offset = ref 0
 
-let num_stack_slots = Array.make Proc.num_register_classes 0
+let num_stack_slots = Array.make Proc.num_stack_slot_classes 0
 
 let prologue_required = ref false
 
@@ -130,7 +130,7 @@ let emit_stack r =
       let ofs = n + Domainstate.(idx_of_field Domain_extra_params) * 8 in
       `[{emit_reg reg_domain_state_ptr}, #{emit_int ofs}]`
   | Stack s ->
-      let ofs = slot_offset s (register_class r) in
+      let ofs = slot_offset s (stack_slot_class r.typ) in
       `[sp, #{emit_int ofs}]`
   | _ -> fatal_error "Emit.emit_stack"
 
@@ -160,7 +160,7 @@ let record_frame_label live dbg =
       | {typ = Val; loc = Reg r} ->
           live_offset := ((r lsl 1) + 1) :: !live_offset
       | {typ = Val; loc = Stack s} as reg ->
-          live_offset := slot_offset s (register_class reg) :: !live_offset
+          live_offset := slot_offset s (stack_slot_class reg.typ) :: !live_offset
       | {typ = Addr} as r ->
           Misc.fatal_error ("bad GC root " ^ Reg.name r)
       | _ -> ())
@@ -495,7 +495,7 @@ module BR = Branch_relaxation.Make (struct
       num_instructions_for_intconst n
     | Lop (Iconst_float _) -> 2
     | Lop (Iconst_symbol _) -> 2
-    | Lop (Iconst_vec128 _) -> 
+    | Lop (Iconst_vec128 _) ->
       (* CR mslater: (SIMD) arm64 *)
       Misc.fatal_error "128-bit vectors are not supported on this architecture"
     | Lop (Iintop_atomic _) ->
@@ -1143,7 +1143,7 @@ let fundecl fundecl =
   stack_offset := 0;
   call_gc_sites := [];
   bound_error_sites := [];
-    for i = 0 to Proc.num_register_classes - 1 do
+  for i = 0 to Proc.num_stack_slot_classes - 1 do
     num_stack_slots.(i) <- fundecl.fun_num_stack_slots.(i);
   done;
   prologue_required := fundecl.fun_prologue_required;
@@ -1195,7 +1195,7 @@ let emit_item = function
   | Cint n -> `	.quad	{emit_nativeint n}\n`
   | Csingle f -> emit_float32_directive ".long" (Int32.bits_of_float f)
   | Cdouble f -> emit_float64_directive ".quad" (Int64.bits_of_float f)
-  | Cvec128 _ -> 
+  | Cvec128 _ ->
     (* CR mslater: (SIMD) arm64 *)
     Misc.fatal_error "128-bit vectors not supported on this architecture"
   | Csymbol_address s -> `	.quad	{emit_symbol s.sym_name}\n`

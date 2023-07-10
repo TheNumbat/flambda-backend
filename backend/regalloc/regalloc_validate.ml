@@ -35,15 +35,15 @@ module Location : sig
 end = struct
   module Stack = struct
     (** This type is based on [Reg.stack_location]. The first difference is that
-        for [Stack (Local index)] this types additionally stores [reg_class]
-        because local stacks are separate for different register classes.
+        for [Stack (Local index)] this types additionally stores [stack_class]
+        because local stacks are separate for different stack slot classes.
         Secondly for all stacks it stores index in words and not byte offset.
         That gives the guarantee that if indices are different then the
         locations do not overlap. *)
     type t =
       | Local of
           { index : int;
-            reg_class : int
+            stack_class : int
           }
       | Incoming of { index : int }
       | Outgoing of { index : int }
@@ -84,9 +84,9 @@ end = struct
 
     let word_index_to_byte_offset index = index * word_size
 
-    let of_stack_loc ~reg_class loc =
+    let of_stack_loc ~stack_class loc =
       match loc with
-      | Reg.Local index -> Local { index; reg_class }
+      | Reg.Local index -> Local { index; stack_class }
       | Reg.Incoming offset ->
         Incoming { index = byte_offset_to_word_index offset }
       | Reg.Outgoing offset ->
@@ -102,12 +102,12 @@ end = struct
       | Domainstate { index } ->
         Reg.Domainstate (word_index_to_byte_offset index)
 
-    let unknown_reg_class = -1
-
-    let reg_class_lossy t =
-      match t with
-      | Local { reg_class; _ } -> reg_class
-      | Incoming _ | Outgoing _ | Domainstate _ -> unknown_reg_class
+    let print ppf = function
+      | Local { index; stack_class } ->
+        Format.fprintf ppf "s[%s:%i]" (Proc.stack_class_tag stack_class) index
+      | Incoming { index } -> Format.fprintf ppf "par[%i]" index
+      | Outgoing { index } -> Format.fprintf ppf "arg[%i]" index
+      | Domainstate { index } -> Format.fprintf ppf "ds[%i]" index
   end
 
   type t =
@@ -120,7 +120,10 @@ end = struct
     | Reg.Reg idx -> Some (Reg idx)
     | Reg.Stack stack ->
       Some
-        (Stack (Stack.of_stack_loc ~reg_class:(Proc.register_class reg) stack))
+        (Stack
+           (Stack.of_stack_loc
+              ~stack_class:(Proc.stack_slot_class reg.Reg.typ)
+              stack))
 
   let of_reg_exn reg = of_reg reg |> Option.get
 
@@ -131,13 +134,9 @@ end = struct
     | Reg idx -> Reg.Reg idx
     | Stack stack -> Reg.Stack (Stack.to_stack_loc_lossy stack)
 
-  let reg_class_lossy t =
-    match t with Reg _ -> -1 | Stack stack -> Stack.reg_class_lossy stack
-
-  let print ppf t =
-    Printmach.loc ~reg_class:(reg_class_lossy t)
-      ~unknown:(fun _ -> assert false)
-      ppf (to_loc_lossy t)
+  let print ppf = function
+    | Reg r -> Format.pp_print_string ppf (Proc.register_name_lossy r)
+    | Stack s -> Stack.print ppf s
 
   let compare (t1 : t) (t2 : t) : int =
     (* CR-someday azewierzejew: Implement proper comparison. *)
@@ -872,7 +871,7 @@ end = struct
       then (
         Format.fprintf Format.str_formatter
           "Unsatisfiable equations when removing result equations.\n\
-           Existing equation has to agree one 0 or 2 sides (cannot on exactly \
+           Existing equation has to agree on 0 or 2 sides (cannot be exactly \
            1) with the removed equation.\n\
            Existing equation %a.\n\
            Removed equation: %a." Equation.print (eq_reg, eq_loc) Equation.print
@@ -964,9 +963,9 @@ module type Description_value = sig
 end
 
 let print_reg_as_loc ppf reg =
-  Printmach.loc ~reg_class:(Proc.register_class reg)
+  Printmach.loc
     ~unknown:(fun ppf -> Format.fprintf ppf "<Unknown>")
-    ppf reg.Reg.loc
+    ppf reg.Reg.loc reg.Reg.typ
 
 module Domain : Cfg_dataflow.Domain_S with type t = Equation_set.t = struct
   (** This type corresponds to the set of equations in the dataflow from the
@@ -1125,7 +1124,7 @@ module Transfer (Desc_val : Description_value) :
                     equations
                     |> Equation_set.verify_destroyed_locations
                          ~destroyed:
-                           (Location.of_regs_exn Proc.destroyed_at_raise)
+                           (Location.of_regs_exn (Proc.destroyed_at_raise ()))
                     |> Result.map_error (fun message ->
                            Printf.sprintf
                              "While verifying locations destroyed at raise: %s"

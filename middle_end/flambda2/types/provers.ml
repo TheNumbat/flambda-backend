@@ -919,7 +919,11 @@ let prove_physical_equality env t1 t2 =
     | Naked_vec128 (_, Ok s1), Naked_vec128 (_, Ok s2) ->
       let module IS = Vector_types.Vec128.Bit_pattern.Set in
       IS.is_empty (IS.inter (s1 :> IS.t) (s2 :> IS.t))
-    | _, _ -> false
+    | ( ( Naked_float _ | Naked_int32 _ | Naked_int64 _ | Naked_nativeint _
+        | Naked_vec128 _ | Value _ | Naked_immediate _ | Region _ | Rec_info _
+          ),
+        _ ) ->
+      false
   in
   let check_heads () : _ proof_of_property =
     match expand_head env t1, expand_head env t2 with

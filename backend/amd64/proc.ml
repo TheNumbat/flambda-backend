@@ -48,8 +48,7 @@ let win64 = Arch.win64
     r14         domain state pointer
     r15         allocation pointer
 
-  xmm0 - xmm15  100 - 115  (for floats)
-  xmm0 - xmm15  200 - 215  (for 128-bit SIMD vectors) *)
+  xmm0 - xmm15  100 - 115 *)
 
 (* Conventions:
      rax - r13: OCaml function arguments
@@ -98,64 +97,58 @@ let float_reg_name =
          "%xmm8"; "%xmm9"; "%xmm10"; "%xmm11";
          "%xmm12"; "%xmm13"; "%xmm14"; "%xmm15" |]
 
-let vec128_reg_name = float_reg_name
-
-let num_register_classes = 3
+let num_register_classes = 2
 
 let register_class r =
   match r.typ with
   | Val | Int | Addr -> 0
   | Float -> 1
-  | Vec128 -> 2
+  | Vec128 ->
+    if not !simd_regalloc_support then
+    Misc.fatal_error "SIMD register allocation is not enabled.";
+    1
 
-let register_class_tag c =
+let num_stack_slot_classes = 3
+
+let stack_slot_class typ =
+  match typ with
+  | Val | Addr | Int -> 0
+  | Float -> 1
+  | Vec128 ->
+    if not !simd_regalloc_support then
+    Misc.fatal_error "SIMD register allocation is not enabled.";
+    2
+
+let stack_class_tag c =
   match c with
   | 0 -> "i"
   | 1 -> "f"
-  | 2 -> "v128"
-  | c -> Misc.fatal_errorf "Unspecified register class %d" c
+  | 2 ->
+    if not !simd_regalloc_support then
+    Misc.fatal_error "SIMD register allocation is not enabled.";
+    "x"
+  | c -> Misc.fatal_errorf "Unspecified stack slot class %d" c
 
-let num_available_registers = [| 13; 16; 16 |]
+let num_available_registers = [| 13; 16 |]
 
-let first_available_register = [| 0; 100; 200 |]
+let first_available_register = [| 0; 100 |]
 
-let register_name r =
-  if r < 100 then int_reg_name.(r) 
-  else if r < 200 then float_reg_name.(r - 100)
-  else vec128_reg_name.(r - 200)
+let register_name ty r =
+  (* If the ID doesn't match the type, the array access will raise. *)
+  match ty with
+  | Int | Addr | Val ->
+    int_reg_name.(r - first_available_register.(0))
+  | Float ->
+    float_reg_name.(r - first_available_register.(1))
+  | Vec128 ->
+    if not !simd_regalloc_support then
+    Misc.fatal_error "SIMD register allocation is not enabled.";
+    float_reg_name.(r - first_available_register.(1))
 
-let class_of reg = 
-  if reg < 100 then 0 
-  else if reg < 200 then 1 
-  else if reg < 300 then 2 
-  else Misc.fatal_errorf "Register of unknown class (%d)" reg 
-
-(* 
-  Sibling classes refer to the same set of physical registers.
-  The number of available registers must be the same in all sibling classes,
-  and their ID ranges must not overlap.
-  
-  Here, both class 1 and class 2 refer to the set of `xmm` registers,
-  but are represented by different ID ranges. Class 1 is reserved for 
-  floating point values and class 2 is reserved for 128-bit SIMD vectors.
-  This allows us to preserve sizing information based on the register IDs.
-
-  The register allocators use the following two functions to check whether
-  allocating a register in one range must also consume an ID in another class.
-*)
-let sibling_classes reg_class = 
-  match reg_class with 
-  | 0 -> [| 0 |]
-  | 1 | 2 -> [| 1; 2 |]
-  | c -> Misc.fatal_errorf "Unspecified register class %d" reg_class
-
-let reg_id_in_class ~reg ~in_class = 
-  let reg_class = class_of reg in 
-  match reg_class, in_class with 
-  | 1, 2 -> Some (reg + 100)
-  | 2, 1 -> Some (reg - 100)
-  | x, y when x = y -> Some reg 
-  | _ -> None
+let register_name_lossy idx =
+  if idx < 100 then int_reg_name.(idx)
+  else if idx < 200 then float_reg_name.(idx - 100)
+  else Misc.fatal_errorf "Unknown register ID %d" idx
 
 (* Pack registers starting at %rax so as to reduce the number of REX
    prefixes and thus improve code density *)
@@ -175,27 +168,34 @@ let hard_float_reg =
 
 let hard_vec128_reg =
   let v = Array.make 16 Reg.dummy in
-  for i = 0 to 15 do v.(i) <- Reg.at_location Vec128 (Reg (200 + i)) done;
+  for i = 0 to 15 do v.(i) <- Reg.at_location Vec128 (Reg (100 + i)) done;
   v
 
 let all_phys_regs =
-  hard_int_reg
-  |> Array.append hard_float_reg
-  |> Array.append hard_vec128_reg
+  let hard_basic_regs = Array.append hard_int_reg hard_float_reg in
+  let hard_basic_and_simd_regs = Array.append hard_basic_regs hard_vec128_reg in
+  fun () -> if !simd_regalloc_support then hard_basic_and_simd_regs else hard_basic_regs
 
-let phys_reg n =
-  if n < 100 then hard_int_reg.(n) else 
-  if n < 200 then hard_float_reg.(n - 100)
-  else hard_vec128_reg.(n - 200)
+let phys_reg ty n =
+  match ty with
+  | Int | Addr | Val -> hard_int_reg.(n)
+  | Float -> hard_float_reg.(n - 100)
+  | Vec128 ->
+    if not !simd_regalloc_support then
+    Misc.fatal_error "SIMD register allocation is not enabled.";
+    hard_vec128_reg.(n - 100)
 
-let rax = phys_reg 0
-let rdx = phys_reg 4
-let r10 = phys_reg 10
-let r11 = phys_reg 11
-let rbp = phys_reg 12
-let rxmm15f = phys_reg 115
+let rax = phys_reg Int 0
+let rdx = phys_reg Int 4
+let r10 = phys_reg Int 10
+let r11 = phys_reg Int 11
+let rbp = phys_reg Int 12
 
-let rxmm15v = phys_reg 215
+(* CSE needs to know that all versions of xmm15 are destroyed. *)
+let destroy_xmm15 () =
+  if !simd_regalloc_support
+  then [| phys_reg Float 115; phys_reg Vec128 115 |]
+  else [| phys_reg Float 115 |]
 
 let destroyed_by_plt_stub =
   if not X86_proc.use_plt then [| |] else [| r10; r11 |]
@@ -205,6 +205,10 @@ let num_destroyed_by_plt_stub = Array.length destroyed_by_plt_stub
 let destroyed_by_plt_stub_set = Reg.set_of_array destroyed_by_plt_stub
 
 let stack_slot slot ty =
+  (match ty with
+   | Float | Int | Addr | Val -> ()
+   | Vec128 -> if not !simd_regalloc_support then
+     Misc.fatal_error "SIMD register allocation is not enabled.");
   Reg.at_location ty (Stack slot)
 
 (* Instruction selection *)
@@ -215,19 +219,17 @@ let word_addressed = false
 
 let size_domainstate_args = 64 * size_int
 
-let calling_conventions first_int last_int first_float last_float first_vec128 last_vec128
-                        make_stack first_stack
+let calling_conventions first_int last_int first_float last_float make_stack first_stack
                         arg =
   let loc = Array.make (Array.length arg) Reg.dummy in
   let int = ref first_int in
   let float = ref first_float in
-  let vec128 = ref first_vec128 in
   let ofs = ref first_stack in
   for i = 0 to Array.length arg - 1 do
     match arg.(i) with
     | Val | Int | Addr as ty ->
         if !int <= last_int then begin
-          loc.(i) <- phys_reg !int;
+          loc.(i) <- phys_reg ty !int;
           incr int
         end else begin
           loc.(i) <- stack_slot (make_stack !ofs) ty;
@@ -236,17 +238,15 @@ let calling_conventions first_int last_int first_float last_float first_vec128 l
         assert (not (Reg.Set.mem loc.(i) destroyed_by_plt_stub_set))
     | Float ->
         if !float <= last_float then begin
-          loc.(i) <- phys_reg !float;
-          incr float;
-          incr vec128
+          loc.(i) <- phys_reg Float !float;
+          incr float
         end else begin
           loc.(i) <- stack_slot (make_stack !ofs) Float;
           ofs := !ofs + size_float
         end
     | Vec128 ->
-      if !vec128 <= last_vec128 then begin
-        loc.(i) <- phys_reg !vec128;
-        incr vec128;
+      if !float <= last_float then begin
+        loc.(i) <- phys_reg Vec128 !float;
         incr float
       end else begin
         ofs := Misc.align !ofs 16;
@@ -268,18 +268,18 @@ let outgoing ofs =
 let not_supported _ofs = fatal_error "Proc.loc_results: cannot call"
 
 let loc_arguments arg =
-  calling_conventions 0 9 100 109 200 209 outgoing (- size_domainstate_args) arg
+  calling_conventions 0 9 100 109 outgoing (- size_domainstate_args) arg
 let loc_parameters arg =
   let (loc, _ofs) =
-    calling_conventions 0 9 100 109 200 209 incoming (- size_domainstate_args) arg
+    calling_conventions 0 9 100 109 incoming (- size_domainstate_args) arg
   in
   loc
 
 let loc_results_call res =
-  calling_conventions 0 9 100 109 200 209 outgoing (- size_domainstate_args) res
+  calling_conventions 0 9 100 109 outgoing (- size_domainstate_args) res
 let loc_results_return res =
   let (loc, _ofs) =
-    calling_conventions 0 9 100 109 200 209 incoming (- size_domainstate_args) res
+    calling_conventions 0 9 100 109 incoming (- size_domainstate_args) res
   in loc
 
 let max_arguments_for_tailcalls = 10 (* in regs *) + 64 (* in domain state *)
@@ -298,19 +298,16 @@ let max_arguments_for_tailcalls = 10 (* in regs *) + 64 (* in domain state *)
      Return value in rax or xmm0. *)
 
 let loc_external_results res =
-  let (loc, _ofs) = calling_conventions 0 0 100 100 200 200 not_supported 0 res in loc
+  let (loc, _ofs) = calling_conventions 0 0 100 100 not_supported 0 res in loc
 
 let unix_loc_external_arguments arg =
-  calling_conventions 2 7 100 107 200 207 outgoing 0 arg
+  calling_conventions 2 7 100 107 outgoing 0 arg
 
 let win64_int_external_arguments =
   [| 5 (*rcx*); 4 (*rdx*); 6 (*r8*); 7 (*r9*) |]
 let win64_float_external_arguments =
   [| 100 (*xmm0*); 101 (*xmm1*); 102 (*xmm2*); 103 (*xmm3*) |]
 
-let win64_vec128_external_arguments =
-  [| 200 (*xmm0*); 201 (*xmm1*); 202 (*xmm2*); 203 (*xmm3*) |]
-  
 let win64_loc_external_arguments arg =
   let loc = Array.make (Array.length arg) Reg.dummy in
   let reg = ref 0
@@ -319,7 +316,7 @@ let win64_loc_external_arguments arg =
     match arg.(i) with
     | Val | Int | Addr as ty ->
         if !reg < 4 then begin
-          loc.(i) <- phys_reg win64_int_external_arguments.(!reg);
+          loc.(i) <- phys_reg ty win64_int_external_arguments.(!reg);
           incr reg
         end else begin
           loc.(i) <- stack_slot (Outgoing !ofs) ty;
@@ -327,7 +324,7 @@ let win64_loc_external_arguments arg =
         end
     | Float ->
         if !reg < 4 then begin
-          loc.(i) <- phys_reg win64_float_external_arguments.(!reg);
+          loc.(i) <- phys_reg Float win64_float_external_arguments.(!reg);
           incr reg
         end else begin
           loc.(i) <- stack_slot (Outgoing !ofs) Float;
@@ -335,7 +332,7 @@ let win64_loc_external_arguments arg =
         end
     | Vec128 ->
       if !reg < 4 then begin
-        loc.(i) <- phys_reg win64_vec128_external_arguments.(!reg);
+        loc.(i) <- phys_reg Vec128 win64_float_external_arguments.(!reg);
         incr reg
       end else begin
         ofs := Misc.align !ofs 16;
@@ -365,13 +362,10 @@ let int_dwarf_reg_numbers =
 let float_dwarf_reg_numbers =
   [| 17; 18; 19; 20; 21; 22; 23; 24; 25; 26; 27; 28; 29; 30; 31; 32 |]
 
-let vec128_dwarf_reg_numbers = float_dwarf_reg_numbers
-
 let dwarf_register_numbers ~reg_class =
   match reg_class with
   | 0 -> int_dwarf_reg_numbers
   | 1 -> float_dwarf_reg_numbers
-  | 2 -> vec128_dwarf_reg_numbers
   | _ -> Misc.fatal_errorf "Bad register class %d" reg_class
 
 let stack_ptr_dwarf_register_number = 7
@@ -383,20 +377,22 @@ let regs_are_volatile _rs = false
 (* Registers destroyed by operations *)
 
 let destroyed_at_c_call =
-  if win64 then
-    (* Win64: rbx, rbp, rsi, rdi, r12-r15, xmm6-xmm15 preserved *)
-    Array.of_list(List.map phys_reg
-      [0;4;5;6;7;10;11;
-       100;101;102;103;104;105;
-       200;201;202;203;204;205])
-  else
+  let basic_regs, simd_regs =
+  match win64 with
+  | true ->
+    Array.append
+      (Array.map (phys_reg Int) [|0;4;5;6;7;10;11|])
+      (Array.sub hard_float_reg 0 6),
+    Array.sub hard_vec128_reg 0 6
+  | false ->
     (* Unix: rbp, rbx, r12-r15 preserved *)
-    Array.of_list(List.map phys_reg
-      [0;2;3;4;5;6;7;10;11;
-       100;101;102;103;104;105;106;107;
-       108;109;110;111;112;113;114;115;
-       200;201;202;203;204;205;206;207;
-       208;209;210;211;212;213;214;215])
+    Array.append
+      (Array.map (phys_reg Int) [|0;2;3;4;5;6;7;10;11|])
+      hard_float_reg,
+    hard_vec128_reg
+  in
+  let basic_and_simd_regs = Array.append basic_regs simd_regs in
+  fun () -> if !simd_regalloc_support then basic_and_simd_regs else basic_regs
 
 let destroyed_at_alloc_or_poll =
   if X86_proc.use_plt then
@@ -412,12 +408,13 @@ let has_pushtrap traps =
 
 (* note: keep this function in sync with `destroyed_at_{basic,terminator}` below. *)
 let destroyed_at_oper = function
-    Iop(Icall_ind | Icall_imm _ | Iextcall { alloc = true; }) ->
-    all_phys_regs
-  | Iop(Iextcall { alloc = false; }) -> destroyed_at_c_call
+    Iop(Icall_ind | Icall_imm _ | Iextcall { alloc = true; })
+        -> all_phys_regs ()
+  | Iop(Iextcall { alloc = false; }) -> destroyed_at_c_call ()
   | Iop(Iintop(Idiv | Imod)) | Iop(Iintop_imm((Idiv | Imod), _))
         -> [| rax; rdx |]
-  | Iop(Istore(Single, _, _)) -> [| rxmm15f; rxmm15v |]
+  | Iop(Istore(Single, _, _))
+        -> destroy_xmm15 ()
   | Iop(Ialloc _ | Ipoll _) -> destroyed_at_alloc_or_poll
   | Iop(Iintop(Imulh _ | Icomp _) | Iintop_imm((Icomp _), _))
         -> [| rax |]
@@ -464,7 +461,7 @@ let destroyed_at_oper = function
       [||]
 
 
-let destroyed_at_raise = all_phys_regs
+let destroyed_at_raise () = all_phys_regs ()
 
 let destroyed_at_reloadretaddr = [| |]
 
@@ -478,7 +475,7 @@ let destroyed_at_basic (basic : Cfg_intf.S.basic) =
   | Op (Intop (Idiv | Imod)) | Op (Intop_imm ((Idiv | Imod), _)) ->
     [| rax; rdx |]
   | Op(Store(Single, _, _)) ->
-    [| rxmm15f; rxmm15v |]
+    destroy_xmm15 ()
   | Op(Intop(Imulh _ | Icomp _) | Intop_imm((Icomp _), _)) ->
     [| rax |]
   | Op (Specific (Irdtsc | Irdpmc)) ->
@@ -534,9 +531,9 @@ let destroyed_at_terminator (terminator : Cfg_intf.S.terminator) =
     [| rax; rdx |]
   | Call_no_return { func_symbol = _; alloc; ty_res = _; ty_args = _; }
   | Prim {op = External { func_symbol = _; alloc; ty_res = _; ty_args = _; }; _} ->
-    if alloc then all_phys_regs else destroyed_at_c_call
+    if alloc then all_phys_regs () else destroyed_at_c_call ()
   | Call {op = Indirect | Direct _; _} ->
-    all_phys_regs
+    all_phys_regs ()
   | Specific_can_raise { op = (Ilea _ | Ibswap _ | Isqrtf | Isextend32 | Izextend32
                        | Ifloatarithmem _ | Ifloatsqrtf _
                        | Ifloat_iround | Ifloat_round _ | Ifloat_min | Ifloat_max
@@ -601,8 +598,8 @@ let safe_register_pressure = function
 let max_register_pressure =
   let consumes ~int ~float =
     if fp
-    then [| 12 - int; 16 - float; 16 - float |]
-    else [| 13 - int; 16 - float; 16 - float |]
+    then [| 12 - int; 16 - float |]
+    else [| 13 - int; 16 - float |]
   in function
     Iextcall _ ->
     if win64
@@ -646,8 +643,8 @@ let max_register_pressure =
 
 let frame_required ~fun_contains_calls ~fun_num_stack_slots =
   fp || fun_contains_calls ||
-  fun_num_stack_slots.(0) > 0 || 
-  fun_num_stack_slots.(1) > 0 || 
+  fun_num_stack_slots.(0) > 0 ||
+  fun_num_stack_slots.(1) > 0 ||
   fun_num_stack_slots.(2) > 0
 
 let prologue_required ~fun_contains_calls ~fun_num_stack_slots =
@@ -663,6 +660,21 @@ let init () =
     num_available_registers.(0) <- 12
   end else
     num_available_registers.(0) <- 13
+
+(* This is not always the same as [all_phys_regs], as some physical registers
+   may not be allocatable (e.g. rbp when frame pointers are enabled). *)
+let precolored_regs =
+  let ints_no_fp = Array.sub hard_int_reg 0 12 in
+  let basic_regs = Array.append hard_int_reg hard_float_reg in
+  let basic_regs_no_fp = Array.append ints_no_fp hard_float_reg in
+  let basic_and_simd_regs = Array.append basic_regs hard_vec128_reg in
+  let basic_and_simd_regs_no_fp = Array.append basic_regs_no_fp hard_vec128_reg in
+  fun () ->
+    match fp, !simd_regalloc_support with
+    | false, false -> basic_regs
+    | true, false -> basic_regs_no_fp
+    | false, true -> basic_and_simd_regs
+    | true, true -> basic_and_simd_regs_no_fp
 
 let operation_supported = function
   | Cpopcnt -> !popcnt_support

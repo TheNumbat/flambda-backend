@@ -103,9 +103,9 @@ let precondition : Cfg_with_layout.t -> unit =
   let fun_num_stack_slots =
     (Cfg_with_layout.cfg cfg_with_layout).fun_num_stack_slots
   in
-  Array.iteri fun_num_stack_slots ~f:(fun reg_class num_slots ->
+  Array.iteri fun_num_stack_slots ~f:(fun stack_class num_slots ->
       if num_slots <> 0
-      then fatal "register class %d has %d slots(s)" reg_class num_slots)
+      then fatal "stack slot class %d has %d slots(s)" stack_class num_slots)
 
 let postcondition_layout : Cfg_with_layout.t -> unit =
  fun cfg_with_layout ->
@@ -149,11 +149,12 @@ let postcondition_layout : Cfg_with_layout.t -> unit =
       unit =
     match reg.Reg.loc with
     | Reg phys_reg ->
-      let phys_reg = Proc.phys_reg phys_reg in
-      if not (same_reg_class reg phys_reg)
+      let phys_reg = Proc.phys_reg reg.typ phys_reg in
+      if not (same_stack_class reg phys_reg && same_reg_class reg phys_reg)
       then
         fatal
-          "instruction %d assigned %a to %a but they are in different classes"
+          "instruction %d assigned %a to %a but they are in different register \
+           or stack slot classes"
           id Printmach.reg reg Printmach.reg phys_reg
     | Stack _ | Unknown -> ()
   in
@@ -163,7 +164,7 @@ let postcondition_layout : Cfg_with_layout.t -> unit =
   in
   let module Int = Numbers.Int in
   let used_stack_slots =
-    Array.init Proc.num_register_classes ~f:(fun _ -> Int.Set.empty)
+    Array.init Proc.num_stack_slot_classes ~f:(fun _ -> Int.Set.empty)
   in
   let record_stack_slot_use (reg : Reg.t) : unit =
     match reg.loc with
@@ -172,9 +173,9 @@ let postcondition_layout : Cfg_with_layout.t -> unit =
     | Stack stack_loc -> (
       match stack_loc with
       | Local index ->
-        let reg_class = Proc.register_class reg in
-        used_stack_slots.(reg_class)
-          <- Int.Set.add index used_stack_slots.(reg_class)
+        let stack_class = Proc.stack_slot_class reg.typ in
+        used_stack_slots.(stack_class)
+          <- Int.Set.add index used_stack_slots.(stack_class)
       | Incoming _ -> ()
       | Outgoing _ -> ()
       | Domainstate _ -> ())
@@ -206,7 +207,7 @@ let postcondition_layout : Cfg_with_layout.t -> unit =
   let fun_num_stack_slots =
     (Cfg_with_layout.cfg cfg_with_layout).fun_num_stack_slots
   in
-  Array.iteri fun_num_stack_slots ~f:(fun reg_class num_slots ->
+  Array.iteri fun_num_stack_slots ~f:(fun stack_class num_slots ->
       let available_slots =
         Seq.ints 0 |> Seq.take num_slots |> Int.Set.of_seq
       in
@@ -214,24 +215,28 @@ let postcondition_layout : Cfg_with_layout.t -> unit =
         set |> Int.Set.elements |> List.map ~f:string_of_int
         |> String.concat ", "
       in
-      let invalid = Int.Set.diff used_stack_slots.(reg_class) available_slots in
+      let invalid =
+        Int.Set.diff used_stack_slots.(stack_class) available_slots
+      in
       if not (Int.Set.is_empty invalid)
       then
-        fatal "register class %d uses the following invalid slots: %s" reg_class
-          (string_of_set invalid);
-      let unused = Int.Set.diff available_slots used_stack_slots.(reg_class) in
+        fatal "stack slot class %d uses the following invalid slots: %s"
+          stack_class (string_of_set invalid);
+      let unused =
+        Int.Set.diff available_slots used_stack_slots.(stack_class)
+      in
       if not (Int.Set.is_empty unused)
       then
-        fatal "register class %d has the following unused slots: %s" reg_class
-          (string_of_set unused))
+        fatal "stack slot class %d has the following unused slots: %s"
+          stack_class (string_of_set unused))
 
-let postcondition_liveness : Cfg_with_liveness.t -> unit =
- fun cfg_with_liveness ->
-  postcondition_layout (Cfg_with_liveness.cfg_with_layout cfg_with_liveness);
-  let cfg = Cfg_with_liveness.cfg cfg_with_liveness in
+let postcondition_liveness : Cfg_with_infos.t -> unit =
+ fun cfg_with_infos ->
+  postcondition_layout (Cfg_with_infos.cfg_with_layout cfg_with_infos);
+  let cfg = Cfg_with_infos.cfg cfg_with_infos in
   let entry_block = Cfg.get_block_exn cfg cfg.entry_label in
   let live_at_entry_point =
-    Cfg_with_liveness.liveness_find cfg_with_liveness
+    Cfg_with_infos.liveness_find cfg_with_infos
       (Cfg.first_instruction_id entry_block)
   in
   Reg.Set.iter

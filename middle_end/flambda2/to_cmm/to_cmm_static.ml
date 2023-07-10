@@ -160,9 +160,14 @@ let static_const0 env res ~updates (bound_static : Bound_static.Pattern.t)
     env, res, updates
   | Block_like symbol, Boxed_vec128 (ty, v) ->
     let default = Vector_types.Vec128.Bit_pattern.zero in
-    let transl = Vector_types.Vec128.Bit_pattern.to_int64s in
-    let structured (v0, v1) =
-      Clambda.Uconst_vec128 (Vector_types.Vec128.to_lambda ty, v0, v1)
+    let transl v =
+      let { Vector_types.Vec128.Bit_pattern.high; low } =
+        Vector_types.Vec128.Bit_pattern.to_bits v
+      in
+      { Cmm.high; low }
+    in
+    let structured { Cmm.high; low } =
+      Clambda.Uconst_vec128 { ty = Vector_types.Vec128.to_lambda ty; high; low }
     in
     let res, env, updates =
       static_boxed_number ~kind:Onetwentyeight ~env ~symbol ~default

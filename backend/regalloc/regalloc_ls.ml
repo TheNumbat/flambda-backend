@@ -22,21 +22,24 @@ module Utils = struct
   let set_spilled _reg = ()
 end
 
-let rewrite : State.t -> Cfg_with_liveness.t -> spilled_nodes:Reg.t list -> unit
-    =
- fun state cfg_with_liveness ~spilled_nodes ->
-  Regalloc_rewrite.rewrite_gen
-    (module State)
-    (module Utils)
-    state cfg_with_liveness ~spilled_nodes
-  |> ignore
+let rewrite : State.t -> Cfg_with_infos.t -> spilled_nodes:Reg.t list -> unit =
+ fun state cfg_with_infos ~spilled_nodes ->
+  let _new_temporaries, block_inserted =
+    Regalloc_rewrite.rewrite_gen
+      (module State)
+      (module Utils)
+      state cfg_with_infos ~spilled_nodes
+  in
+  Cfg_with_infos.invalidate_liveness cfg_with_infos;
+  if block_inserted
+  then Cfg_with_infos.invalidate_dominators_and_loop_infos cfg_with_infos
 
 (* Equivalent to [build_intervals] in "backend/interval.ml". *)
-let build_intervals : State.t -> Cfg_with_liveness.t -> unit =
- fun state cfg_with_liveness ->
+let build_intervals : State.t -> Cfg_with_infos.t -> unit =
+ fun state cfg_with_infos ->
   log ~indent:1 "build_intervals";
-  let cfg_with_layout = Cfg_with_liveness.cfg_with_layout cfg_with_liveness in
-  let liveness = Cfg_with_liveness.liveness cfg_with_liveness in
+  let cfg_with_layout = Cfg_with_infos.cfg_with_layout cfg_with_infos in
+  let liveness = Cfg_with_infos.liveness cfg_with_infos in
   let past_ranges : Interval.t Reg.Tbl.t = Reg.Tbl.create 123 in
   let current_ranges : Range.t Reg.Tbl.t = Reg.Tbl.create 123 in
   let add_range (reg : Reg.t) ({ begin_; end_ } as range : Range.t) : unit =
@@ -72,7 +75,7 @@ let build_intervals : State.t -> Cfg_with_liveness.t -> unit =
     let off = on + 1 in
     if trap_handler
     then
-      Array.iter Proc.destroyed_at_raise ~f:(fun reg ->
+      Array.iter (Proc.destroyed_at_raise ()) ~f:(fun reg ->
           update_range reg ~begin_:on ~end_:on);
     instr.ls_order <- on;
     Array.iter instr.arg ~f:(fun reg -> update_range reg ~begin_:on ~end_:on);
@@ -126,42 +129,29 @@ let allocate_free_register : State.t -> Interval.t -> spilling_reg =
   | Unknown, true -> allocate_stack_slot reg
   | Unknown, _ -> (
     let reg_class = Proc.register_class reg in
-    let intervals_per_class = State.active_classes state in
-    let sibling_classes = Proc.sibling_classes reg_class in
+    let intervals = State.active state ~reg_class in
     let first_available = Proc.first_available_register.(reg_class) in
     match Proc.num_available_registers.(reg_class) with
     | 0 -> fatal "register class %d has no available registers" reg_class
     | num_available_registers ->
       let available = Array.make num_available_registers true in
-      Array.iter sibling_classes ~f:(fun sibling_class ->
-          let intervals = intervals_per_class.(sibling_class) in
-          List.iter intervals.active ~f:(fun (interval : Interval.t) ->
-              match interval.reg.loc with
-              | Reg r -> (
-                match Proc.reg_id_in_class ~reg:r ~in_class:reg_class with
-                | None -> ()
-                | Some id ->
-                  if id - first_available < num_available_registers
-                  then available.(id - first_available) <- false)
-              | Stack _ | Unknown -> ()));
+      List.iter intervals.active ~f:(fun (interval : Interval.t) ->
+          match interval.reg.loc with
+          | Reg r ->
+            if r - first_available < num_available_registers
+            then available.(r - first_available) <- false
+          | Stack _ | Unknown -> ());
       let remove_bound_overlapping (itv : Interval.t) : unit =
         match itv.reg.loc with
-        | Reg r -> (
-          match Proc.reg_id_in_class ~reg:r ~in_class:reg_class with
-          | None -> ()
-          | Some id ->
-            if id - first_available < num_available_registers
-               && available.(id - first_available)
-               && Interval.overlap itv interval
-            then available.(id - first_available) <- false)
+        | Reg r ->
+          if r - first_available < num_available_registers
+             && available.(r - first_available)
+             && Interval.overlap itv interval
+          then available.(r - first_available) <- false
         | Stack _ | Unknown -> ()
       in
-      Array.iter sibling_classes ~f:(fun sibling_class ->
-          List.iter intervals_per_class.(sibling_class).inactive
-            ~f:remove_bound_overlapping);
-      Array.iter sibling_classes ~f:(fun sibling_class ->
-          List.iter intervals_per_class.(sibling_class).fixed
-            ~f:remove_bound_overlapping);
+      List.iter intervals.inactive ~f:remove_bound_overlapping;
+      List.iter intervals.fixed ~f:remove_bound_overlapping;
       let rec assign idx =
         if idx >= num_available_registers
         then raise No_free_register
@@ -169,10 +159,8 @@ let allocate_free_register : State.t -> Interval.t -> spilling_reg =
         then (
           reg.loc <- Reg (first_available + idx);
           reg.spill <- false;
-          Array.iter sibling_classes ~f:(fun sibling_class ->
-              intervals_per_class.(sibling_class).active
-                <- Interval.List.insert_sorted
-                     intervals_per_class.(sibling_class).active interval);
+          intervals.active
+            <- Interval.List.insert_sorted intervals.active interval;
           if ls_debug
           then log ~indent:3 "assigning %d to register %a" idx Printmach.reg reg;
           Not_spilling)
@@ -185,31 +173,21 @@ let allocate_blocked_register : State.t -> Interval.t -> spilling_reg =
  fun state interval ->
   let reg = interval.reg in
   let reg_class = Proc.register_class reg in
-  let sibling_classes = Proc.sibling_classes reg_class in
-  let cl_intervals = State.active_classes state in
-  let intervals = cl_intervals.(reg_class) in
+  let intervals = State.active state ~reg_class in
   match intervals.active with
-  | hd :: _ ->
+  | hd :: tl ->
     let chk r =
-      assert (interfering_reg_class r.Interval.reg hd.Interval.reg);
+      assert (same_reg_class r.Interval.reg hd.Interval.reg);
       Reg.same_loc r.Interval.reg hd.Interval.reg && Interval.overlap r interval
     in
     if hd.end_ > interval.end_
        && not
-            (Array.exists sibling_classes ~f:(fun sibling_class ->
-                 let intervals = cl_intervals.(sibling_class) in
-                 List.exists ~f:chk intervals.fixed
-                 || List.exists ~f:chk intervals.inactive))
+            (List.exists ~f:chk intervals.fixed
+            || List.exists ~f:chk intervals.inactive)
     then (
       (match hd.reg.loc with Reg _ -> () | Stack _ | Unknown -> assert false);
       interval.reg.loc <- hd.reg.loc;
-      Array.iter sibling_classes ~f:(fun sibling_class ->
-          let intervals = cl_intervals.(sibling_class) in
-          match intervals.active with
-          | sib_hd :: sib_tl ->
-            assert (sib_hd = hd);
-            intervals.active <- Interval.List.insert_sorted sib_tl interval
-          | _ -> assert false);
+      intervals.active <- Interval.List.insert_sorted tl interval;
       allocate_stack_slot hd.reg)
     else allocate_stack_slot reg
   | [] -> allocate_stack_slot reg
@@ -222,16 +200,16 @@ let reg_reinit () =
    seems to be fine with 3 *)
 let max_rounds = 50
 
-let rec main : round:int -> State.t -> Cfg_with_liveness.t -> unit =
- fun ~round state cfg_with_liveness ->
+let rec main : round:int -> State.t -> Cfg_with_infos.t -> unit =
+ fun ~round state cfg_with_infos ->
   if round > max_rounds
   then
     fatal "register allocation was not succesful after %d rounds (%s)"
-      max_rounds (Cfg_with_liveness.cfg cfg_with_liveness).fun_name;
+      max_rounds (Cfg_with_infos.cfg cfg_with_infos).fun_name;
   if ls_debug then log ~indent:0 "main, round #%d" round;
   reg_reinit ();
-  build_intervals state cfg_with_liveness;
-  State.invariant_intervals state cfg_with_liveness;
+  build_intervals state cfg_with_infos;
+  State.invariant_intervals state cfg_with_infos;
   State.invariant_active state;
   if ls_debug then snapshot_for_fatal := Some (State.for_fatal state);
   if ls_debug then log ~indent:1 "iterating over intervals";
@@ -257,13 +235,12 @@ let rec main : round:int -> State.t -> Cfg_with_liveness.t -> unit =
   in
   if not (Reg.Set.is_empty spilled)
   then (
-    rewrite state cfg_with_liveness ~spilled_nodes:(Reg.Set.elements spilled);
-    Cfg_with_liveness.invalidate_liveness cfg_with_liveness;
-    main ~round:(succ round) state cfg_with_liveness)
+    rewrite state cfg_with_infos ~spilled_nodes:(Reg.Set.elements spilled);
+    main ~round:(succ round) state cfg_with_infos)
 
-let run : Cfg_with_liveness.t -> Cfg_with_liveness.t =
- fun cfg_with_liveness ->
-  let cfg_with_layout = Cfg_with_liveness.cfg_with_layout cfg_with_liveness in
+let run : Cfg_with_infos.t -> Cfg_with_infos.t =
+ fun cfg_with_infos ->
+  let cfg_with_layout = Cfg_with_infos.cfg_with_layout cfg_with_infos in
   let cfg_infos, stack_slots =
     Regalloc_rewrite.prelude
       (module Utils)
@@ -280,7 +257,7 @@ let run : Cfg_with_liveness.t -> Cfg_with_liveness.t =
             Format.eprintf "\n%!")
           !snapshot_for_fatal;
         save_cfg "ls" cfg_with_layout)
-      cfg_with_liveness
+      cfg_with_infos
   in
   let spilling_because_unused = Reg.Set.diff cfg_infos.res cfg_infos.arg in
   let state =
@@ -291,9 +268,9 @@ let run : Cfg_with_liveness.t -> Cfg_with_liveness.t =
   | [] -> ()
   | _ :: _ as spilled_nodes ->
     List.iter spilled_nodes ~f:(fun reg -> reg.Reg.spill <- true);
-    rewrite state cfg_with_liveness ~spilled_nodes;
-    Cfg_with_liveness.invalidate_liveness cfg_with_liveness);
-  main ~round:1 state cfg_with_liveness;
+    rewrite state cfg_with_infos ~spilled_nodes;
+    Cfg_with_infos.invalidate_liveness cfg_with_infos);
+  main ~round:1 state cfg_with_infos;
   Regalloc_rewrite.postlude
     (module State)
     (module Utils)
@@ -301,10 +278,10 @@ let run : Cfg_with_liveness.t -> Cfg_with_liveness.t =
     ~f:(fun () ->
       if ls_debug && Lazy.force ls_verbose
       then
-        let liveness = Cfg_with_liveness.liveness cfg_with_liveness in
+        let liveness = Cfg_with_infos.liveness cfg_with_infos in
         iter_cfg_order cfg_with_layout (Lazy.force Order.value) ~f:(fun block ->
             log ~indent:2 "(block %d)" block.start;
             log_body_and_terminator ~indent:2 block.body block.terminator
               liveness))
-    cfg_with_liveness;
-  cfg_with_liveness
+    cfg_with_infos;
+  cfg_with_infos

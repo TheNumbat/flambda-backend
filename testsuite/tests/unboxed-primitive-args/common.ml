@@ -46,11 +46,9 @@ let expand_test = function
     Test (s, fn, a ** b ** c ** d ** e ** f ** Ret g)
   | T (s, fn, p) -> Test (s, fn, p)
 
-external int64x2_of_int64s : int64 -> int64 -> int64x2 = "" "int64x2_of_int64s" [@@noalloc] [@@unboxed] 
-external int64x2_low_int64 : int64x2 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external int64x2_high_int64 : int64x2 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
-external float64x2_low_int64 : float64x2 -> int64 = "" "int64x2_low_int64" [@@noalloc] [@@unboxed]
-external float64x2_high_int64 : float64x2 -> int64 = "" "int64x2_high_int64" [@@noalloc] [@@unboxed]
+external vec128_of_int64s : int64 -> int64 -> vec128 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external vec128_low_int64 : vec128 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external vec128_high_int64 : vec128 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
 let string_of : type a. a typ -> a -> string = function
   | Int       -> Int.to_string
@@ -59,10 +57,8 @@ let string_of : type a. a typ -> a -> string = function
   | Nativeint -> Printf.sprintf "%ndn"
   | Float     ->
       fun f -> Printf.sprintf "float_of_bits 0x%LxL" (Int64.bits_of_float f)
-  | Int64x2    -> 
-      fun ii -> Printf.sprintf "int64x2 0x%Lx:0x%Lx" (int64x2_high_int64 ii) (int64x2_low_int64 ii)
-  | Float64x2    -> 
-      fun ff -> Printf.sprintf "float64x2 0x%Lx:0x%Lx" (float64x2_high_int64 ff) (float64x2_low_int64 ff)
+  | Vec128    ->
+      fun v -> Printf.sprintf "vec128 %Ld:%Ld" (vec128_high_int64 v) (vec128_low_int64 v)
 
 let rec arity : type a. a proto -> int = function
   | Ret _ -> 0
@@ -88,13 +84,13 @@ module Buffer = struct
   external set_int32 : t -> int -> int32 -> unit = "%caml_bigstring_set32"
   external set_int64 : t -> int -> int64 -> unit = "%caml_bigstring_set64"
 
-  let get_int64x2 buf ~arg = 
-    let low, high = get_int64 buf (arg * arg_size), get_int64 buf (arg * arg_size + 8) in 
-    int64x2_of_int64s low high
+  let get_vec128 buf ~arg =
+    let low, high = get_int64 buf (arg * arg_size), get_int64 buf (arg * arg_size + 8) in
+    vec128_of_int64s low high
 
-  let set_int64x2 buf ~arg x = 
-    set_int64 buf (arg * arg_size) (int64x2_low_int64 x); 
-    set_int64 buf ((arg * arg_size) + 8) (int64x2_high_int64 x)
+  let set_vec128 buf ~arg x =
+    set_int64 buf (arg * arg_size) (vec128_low_int64 x);
+    set_int64 buf ((arg * arg_size) + 8) (vec128_high_int64 x)
 
   let get_int32 t ~arg = get_int32 t (arg * arg_size)
   let get_int64 t ~arg = get_int64 t (arg * arg_size)

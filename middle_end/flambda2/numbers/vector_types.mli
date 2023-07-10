@@ -37,15 +37,20 @@ module Vec128 : sig
 
   module Bit_pattern : sig
     (** 128-bit value whose comparison and equality relations are lexicographically
-        ordered by bit pattern. *)
+      ordered by bit pattern. *)
 
     include Container_types.S
 
     val zero : t
 
-    val to_int64s : t -> int64 * int64
+    type bits =
+      { high : int64;
+        low : int64
+      }
 
-    val of_int64s : int64 * int64 -> t
+    val to_bits : t -> bits
+
+    val of_bits : bits -> t
   end
 end
 

@@ -31,11 +31,14 @@ let prefetchwt1_support = ref false
 (* Emit elf notes with trap handling information. *)
 let trap_notes = ref true
 
-(* Basline x86_64 requires SSE and SSE2. The others may be disabled. *)
-let sse3_support = ref true 
-let ssse3_support = ref true 
-let sse41_support = ref true 
-let sse42_support = ref true 
+(* Basline x86_64 requires SSE and SSE2. The others are optional. *)
+let sse3_support = ref true
+let ssse3_support = ref true
+let sse41_support = ref true
+let sse42_support = ref true
+
+(* Enables usage of vector registers. *)
+let simd_regalloc_support = ref false
 
 (* Machine-specific command-line options *)
 
@@ -73,6 +76,10 @@ let command_line_options =
       " Enable SSE4.2 intrinsics (default)";
     "-fno-sse42", Arg.Clear sse3_support,
       " Disable SSE4.2 intrinsics";
+    "-fsimd", Arg.Set simd_regalloc_support,
+      " Enable register allocation for SIMD vectors";
+    "-fno-simd", Arg.Clear simd_regalloc_support,
+      " Disable register allocation for SIMD vectors (default)"
   ]
 
 (* Specific operations for the AMD64 processor *)
@@ -126,7 +133,7 @@ type specific_operation =
   | Isfence                            (* store fence *)
   | Imfence                            (* memory fence *)
   | Ipause                             (* hint for spin-wait loops *)
-  | Isimd of Simd.operation            (* vectorized operations *) 
+  | Isimd of Simd.operation            (* vectorized operations *)
   | Iprefetch of                       (* memory prefetching hint *)
       { is_write: bool;
         locality: prefetch_temporal_locality_hint;
@@ -255,7 +262,7 @@ let print_specific_operation printreg op ppf arg =
       fprintf ppf "mfence"
   | Irdpmc ->
       fprintf ppf "rdpmc %a" printreg arg.(0)
-  | Isimd simd -> 
+  | Isimd simd ->
       Simd.print_operation printreg simd ppf arg
   | Ipause ->
       fprintf ppf "pause"
@@ -400,7 +407,7 @@ let equal_specific_operation left right =
     && equal_prefetch_temporal_locality_hint left_locality right_locality
     && equal_addressing_mode left_addr right_addr
   | Isimd l, Isimd r ->
-    Simd.equal_operation l r 
+    Simd.equal_operation l r
   | (Ilea _ | Istore_int _ | Ioffset_loc _ | Ifloatarithmem _ | Ibswap _
     | Isqrtf | Ifloatsqrtf _ | Isextend32 | Izextend32 | Irdtsc | Irdpmc
     | Ilfence | Isfence | Imfence | Ifloat_iround | Ifloat_round _ |

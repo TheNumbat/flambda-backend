@@ -238,8 +238,8 @@ let targetint (i : Fexpr.targetint) : Targetint_32_64.t =
 let targetint_31_63 (i : Fexpr.targetint) : Targetint_31_63.t =
   Targetint_31_63.of_int64 i
 
-let vec128 (v0, v1) : Vector_types.Vec128.Bit_pattern.t =
-  Vector_types.Vec128.Bit_pattern.of_int64s (v0, v1)
+let vec128 bits : Vector_types.Vec128.Bit_pattern.t =
+  Vector_types.Vec128.Bit_pattern.of_bits bits
 
 let tag_scannable (tag : Fexpr.tag_scannable) : Tag.Scannable.t =
   Tag.Scannable.create_exn tag
@@ -297,8 +297,7 @@ let const (c : Fexpr.const) : Reg_width_const.t =
   | Naked_int32 i -> Reg_width_const.naked_int32 i
   | Naked_int64 i -> Reg_width_const.naked_int64 i
   | Naked_nativeint i -> Reg_width_const.naked_nativeint (i |> targetint)
-  | Naked_vec128 (ty, v0, v1) ->
-    Reg_width_const.naked_vec128 ty ((v0, v1) |> vec128)
+  | Naked_vec128 (ty, bits) -> Reg_width_const.naked_vec128 ty (bits |> vec128)
 
 let rec rec_info env (ri : Fexpr.rec_info) : Rec_info_expr.t =
   let module US = Rec_info_expr.Unrolling_state in

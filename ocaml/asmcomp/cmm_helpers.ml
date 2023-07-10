@@ -919,7 +919,7 @@ module Extended_machtype = struct
       (* Only 64-bit architectures, so this is always [typ_int] *)
       typ_any_int
     | Pvalue Pintval -> typ_tagged_int
-    | Punboxed_vector _ -> 
+    | Punboxed_vector _ ->
       Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
     | Pvalue _ -> typ_val
 end
@@ -1581,7 +1581,7 @@ let box_sized size mode dbg exp =
 (* Simplification of some primitives into C calls *)
 
 let default_prim name =
-  Primitive.simple ~name ~arity:0(*ignored*) ~alloc:true
+  Primitive.simple_on_values ~name ~arity:0(*ignored*) ~alloc:true
 
 
 let int64_native_prim name arity ~alloc =
@@ -3283,9 +3283,10 @@ let kind_of_layout (layout : Lambda.layout) =
   match layout with
   | Pvalue Pfloatval -> Boxed_float
   | Pvalue (Pboxedintval bi) -> Boxed_integer bi
-  | Pvalue (Pboxedvectorval _) -> 
-    Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
   | Pvalue (Pgenval | Pintval | Pvariant _ | Parrayval _)
-  | Ptop | Pbottom | Punboxed_float | Punboxed_int _ | Punboxed_vector _ -> Any
+  | Ptop | Pbottom | Punboxed_float | Punboxed_int _ -> Any
+  | Pvalue (Pboxedvectorval _)
+  | Punboxed_vector _ ->
+    Misc.fatal_error "SIMD vectors are not yet suppored in the upstream compiler build."
 
 let make_tuple l = match l with [e] -> e | _ -> Ctuple l
