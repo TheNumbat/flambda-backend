@@ -101,11 +101,6 @@ let register_name ty r =
 
 let rotate_registers = true
 
-let class_of reg =
-  if reg < 100 then 0
-  else if reg < 200 then 1
-  else Misc.fatal_errorf "Register of unknown class (%d)" reg
-
 (* Representation of hard registers by pseudo-registers *)
 
 let hard_int_reg =
@@ -133,9 +128,6 @@ let phys_reg ty n =
   | Float -> hard_float_reg.(n - 100)
   (* CR mslater: (SIMD) arm64 *)
   | Vec128 -> fatal_error "arm64: got vec128 register"
-
-let phys_reg ty n =
-  Reg.at_location ty (Reg n)
 
 let reg_x8 = phys_reg Int 8
 let reg_d7 = phys_reg Float 107
