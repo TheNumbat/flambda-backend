@@ -145,11 +145,6 @@ let register_name ty r =
     Misc.fatal_error "SIMD register allocation is not enabled.";
     float_reg_name.(r - first_available_register.(1))
 
-let register_name_lossy idx =
-  if idx < 100 then int_reg_name.(idx)
-  else if idx < 200 then float_reg_name.(idx - 100)
-  else Misc.fatal_errorf "Unknown register ID %d" idx
-
 (* Pack registers starting at %rax so as to reduce the number of REX
    prefixes and thus improve code density *)
 let rotate_registers = false
@@ -169,21 +164,19 @@ let hard_float_reg =
 let hard_vec128_reg =
   let v = Array.make 16 Reg.dummy in
   for i = 0 to 15 do v.(i) <- Reg.at_location Vec128 (Reg (100 + i)) done;
-  v
+  fun () -> if !simd_regalloc_support then v
+            else Misc.fatal_error "SIMD register allocation is not enabled."
 
 let all_phys_regs =
-  let hard_basic_regs = Array.append hard_int_reg hard_float_reg in
-  let hard_basic_and_simd_regs = Array.append hard_basic_regs hard_vec128_reg in
-  fun () -> if !simd_regalloc_support then hard_basic_and_simd_regs else hard_basic_regs
+  let basic_regs = Array.append hard_int_reg hard_float_reg in
+  fun () -> if !simd_regalloc_support then Array.append basic_regs (hard_vec128_reg ())
+            else basic_regs
 
 let phys_reg ty n =
   match ty with
   | Int | Addr | Val -> hard_int_reg.(n)
   | Float -> hard_float_reg.(n - 100)
-  | Vec128 ->
-    if not !simd_regalloc_support then
-    Misc.fatal_error "SIMD register allocation is not enabled.";
-    hard_vec128_reg.(n - 100)
+  | Vec128 -> (hard_vec128_reg ()).(n - 100)
 
 let rax = phys_reg Int 0
 let rdx = phys_reg Int 4
@@ -376,23 +369,27 @@ let regs_are_volatile _rs = false
 
 (* Registers destroyed by operations *)
 
-let destroyed_at_c_call =
-  let basic_regs, simd_regs =
-  match win64 with
-  | true ->
-    Array.append
-      (Array.map (phys_reg Int) [|0;4;5;6;7;10;11|])
-      (Array.sub hard_float_reg 0 6),
-    Array.sub hard_vec128_reg 0 6
-  | false ->
-    (* Unix: rbp, rbx, r12-r15 preserved *)
-    Array.append
-      (Array.map (phys_reg Int) [|0;2;3;4;5;6;7;10;11|])
-      hard_float_reg,
-    hard_vec128_reg
+let destroyed_at_c_call_win64 =
+  let basic_regs = Array.append
+    (Array.map (phys_reg Int) [|0;4;5;6;7;10;11|])
+    (Array.sub hard_float_reg 0 6)
   in
-  let basic_and_simd_regs = Array.append basic_regs simd_regs in
-  fun () -> if !simd_regalloc_support then basic_and_simd_regs else basic_regs
+  fun () -> if !simd_regalloc_support
+  then Array.append basic_regs (Array.sub (hard_vec128_reg ()) 0 6)
+  else basic_regs
+
+let destroyed_at_c_call_unix =
+  (* Unix: rbp, rbx, r12-r15 preserved *)
+  let basic_regs = Array.append
+    (Array.map (phys_reg Int) [|0;2;3;4;5;6;7;10;11|])
+    hard_float_reg
+  in
+  fun () -> if !simd_regalloc_support
+  then Array.append basic_regs (hard_vec128_reg ())
+  else basic_regs
+
+let destroyed_at_c_call =
+  if win64 then destroyed_at_c_call_win64 else destroyed_at_c_call_unix
 
 let destroyed_at_alloc_or_poll =
   if X86_proc.use_plt then
@@ -460,8 +457,7 @@ let destroyed_at_oper = function
     else
       [||]
 
-
-let destroyed_at_raise () = all_phys_regs ()
+let destroyed_at_raise = all_phys_regs
 
 let destroyed_at_reloadretaddr = [| |]
 
@@ -661,20 +657,17 @@ let init () =
   end else
     num_available_registers.(0) <- 13
 
-(* This is not always the same as [all_phys_regs], as some physical registers
+(* Precolored_regs is always the same as [all_phys_regs], as some physical registers
    may not be allocatable (e.g. rbp when frame pointers are enabled). *)
-let precolored_regs =
-  let ints_no_fp = Array.sub hard_int_reg 0 12 in
+let all_phys_regs_minus_fp =
+  let hard_int_reg = Array.sub hard_int_reg 0 12 in
   let basic_regs = Array.append hard_int_reg hard_float_reg in
-  let basic_regs_no_fp = Array.append ints_no_fp hard_float_reg in
-  let basic_and_simd_regs = Array.append basic_regs hard_vec128_reg in
-  let basic_and_simd_regs_no_fp = Array.append basic_regs_no_fp hard_vec128_reg in
-  fun () ->
-    match fp, !simd_regalloc_support with
-    | false, false -> basic_regs
-    | true, false -> basic_regs_no_fp
-    | false, true -> basic_and_simd_regs
-    | true, true -> basic_and_simd_regs_no_fp
+  fun () -> if !simd_regalloc_support
+  then Array.append basic_regs (hard_vec128_reg ())
+  else basic_regs
+
+let precolored_regs =
+  if fp then all_phys_regs_minus_fp else all_phys_regs
 
 let operation_supported = function
   | Cpopcnt -> !popcnt_support
