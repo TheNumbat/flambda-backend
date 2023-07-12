@@ -94,7 +94,7 @@ let ocaml_type_of_repr = function
   | Unboxed_integer Pnativeint -> "(nativeint [@unboxed])"
   | Untagged_int               -> "(int [@untagged])"
   | Unboxed_vector Pfloat64x2  -> "(float64x2 [@unboxed])"
-  | Unboxed_vector Pint64x2    -> "(int64x2 [@unboxed])" 
+  | Unboxed_vector Pint64x2    -> "(int64x2 [@unboxed])"
 
 let ocaml_type_gadt_of_repr = function
   (* Doesn't really matters what we choose for this case *)

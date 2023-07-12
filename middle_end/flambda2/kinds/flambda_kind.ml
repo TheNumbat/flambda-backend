@@ -328,6 +328,7 @@ module With_subkind = struct
       | Boxed_int32, Boxed_int32
       | Boxed_int64, Boxed_int64
       | Boxed_nativeint, Boxed_nativeint
+      | Boxed_vec128, Boxed_vec128
       | Tagged_immediate, Tagged_immediate
       | Float_array, Float_array
       | Immediate_array, Immediate_array

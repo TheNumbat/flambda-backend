@@ -503,7 +503,7 @@ let destroyed_at_basic (basic : Cfg_intf.S.basic) =
        | End_region
        | Specific (Ilea _ | Istore_int _ | Ioffset_loc _
                   | Ifloatarithmem _ | Ibswap _ | Isqrtf
-                  | Ifloatsqrtf _ | Ifloat_iround | Isimd _ 
+                  | Ifloatsqrtf _ | Ifloat_iround | Isimd _
                   | Ifloat_round _ | Ifloat_min | Ifloat_max
                   | Isextend32 | Izextend32 | Ipause
                   | Iprefetch _ | Ilfence | Isfence | Imfence)
@@ -626,7 +626,7 @@ let max_register_pressure =
   | Istackoffset _ | Iload (_, _, _)
   | Ispecific(Ilea _ | Isextend32 | Izextend32 | Iprefetch _ | Ipause
              | Irdtsc | Irdpmc | Istore_int (_, _, _)
-             | Ilfence | Isfence | Imfence 
+             | Ilfence | Isfence | Imfence
              | Ifloat_round _ | Isimd _
              | Ifloat_iround | Ifloat_min | Ifloat_max
              | Ioffset_loc (_, _) | Ifloatarithmem (_, _)

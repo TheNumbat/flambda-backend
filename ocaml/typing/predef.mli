@@ -38,11 +38,11 @@ val type_extension_constructor:type_expr
 val type_floatarray:type_expr
 
 val type_int8x16: type_expr
-val type_int16x8: type_expr 
-val type_int32x4: type_expr 
-val type_int64x2: type_expr 
-val type_float32x4: type_expr 
-val type_float64x2: type_expr 
+val type_int16x8: type_expr
+val type_int32x4: type_expr
+val type_int64x2: type_expr
+val type_float32x4: type_expr
+val type_float64x2: type_expr
 
 val path_int: Path.t
 val path_char: Path.t
@@ -64,11 +64,11 @@ val path_extension_constructor: Path.t
 val path_floatarray: Path.t
 
 val path_int8x16: Path.t
-val path_int16x8: Path.t 
-val path_int32x4: Path.t 
-val path_int64x2: Path.t 
-val path_float32x4: Path.t 
-val path_float64x2: Path.t 
+val path_int16x8: Path.t
+val path_int32x4: Path.t
+val path_int64x2: Path.t
+val path_float32x4: Path.t
+val path_float64x2: Path.t
 
 val path_match_failure: Path.t
 val path_invalid_argument: Path.t

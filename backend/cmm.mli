@@ -184,7 +184,7 @@ type memory_chunk =
   | Onetwentyeight                     (* word-aligned 128-bit vector
                                           CR mslater: (SIMD) alignment *)
 
-type vector_cast = 
+type vector_cast =
   | Bits128 of { from : Lambda.vec128_type ; to_ : Lambda.vec128_type }
 
 type scalar_cast =

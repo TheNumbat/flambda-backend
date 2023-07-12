@@ -46,9 +46,9 @@ let expand_test = function
     Test (s, fn, a ** b ** c ** d ** e ** f ** Ret g)
   | T (s, fn, p) -> Test (s, fn, p)
 
-external vec128_of_int64s : int64 -> int64 -> vec128 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
-external vec128_low_int64 : vec128 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
-external vec128_high_int64 : vec128 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
+external int64x2_of_int64s : int64 -> int64 -> int64x2 = "" "vec128_of_int64s" [@@noalloc] [@@unboxed]
+external int64x2_low_int64 : int64x2 -> int64 = "" "vec128_low_int64" [@@noalloc] [@@unboxed]
+external int64x2_high_int64 : int64x2 -> int64 = "" "vec128_high_int64" [@@noalloc] [@@unboxed]
 
 let string_of : type a. a typ -> a -> string = function
   | Int       -> Int.to_string
@@ -127,7 +127,7 @@ module Buffer = struct
     | Nativeint -> get_nativeint
     | Float     -> get_float
     | Int64x2   -> get_int64x2
-    | Float64x2 -> get_int64x2 |> Obj.magic
+    | Float64x2 -> get_float64x2
 
   let set : type a. a typ -> t -> arg:int -> a -> unit = function
     | Int       -> set_int
@@ -136,7 +136,7 @@ module Buffer = struct
     | Nativeint -> set_nativeint
     | Float     -> set_float
     | Int64x2   -> set_int64x2
-    | Float64x2 -> set_int64x2 |> Obj.magic
+    | Float64x2 -> set_float64x2
 
   (* This is almost a memcpy except that we use get/set which should
      ensure that the values in [dst] don't overflow. *)
